@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Filmflix - فیلمفلیکس</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { bg: '#0b0b0e', card: '#16161d', accent: '#e11d48', gold: '#f59e0b' }
+                    },
+                    fontFamily: { sans: ['Vazirmatn', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0b0b0e; color: #f3f4f6; font-family: 'Vazirmatn', sans-serif; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        
+        /* Prevent Auto Zoom on Mobile Input Focus */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+
+        .filter-btn-active {
+            background-color: #e11d48 !important;
+            color: #ffffff !important;
+            border-color: #e11d48 !important;
+            box-shadow: 0 0 12px rgba(225, 29, 72, 0.4);
+        }
+
+        #main-header {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #main-header.scrolled {
+            background-color: rgba(11, 11, 14, 0.85);
+            backdrop-filter: blur(16px);
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid rgba(39, 39, 42, 0.4);
+        }
+    </style>
+</head>
+<body class="pb-20 select-none">
+
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 bg-[#0b0b0e]/80 backdrop-blur-md px-5 py-4 border-b border-transparent">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSearchModal()" class="p-2 text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-800 rounded-xl transition hover:border-rose-600/50">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </button>
+                <button onclick="toggleLanguage()" id="lang-switch-btn" class="px-3 py-2 text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-800 rounded-xl transition hover:border-rose-600/50">
+                    EN
+                </button>
+            </div>
+            
+            <div onclick="handleLogoClick()" class="flex items-center gap-2 cursor-pointer transition-transform duration-300 active:scale-95">
+                <span class="text-xl font-black tracking-wider text-white">
+                    <span class="text-rose-600">F</span>ILMFLI<span class="text-rose-600">X</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- OWNER / ADMIN DASHBOARD MODAL -->
+    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-xl w-full space-y-5 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleAdminModal()" class="absolute top-4 left-4 text-zinc-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="text-center space-y-1">
+                <h3 class="text-xl font-extrabold text-white" data-i18n="admin_panel_title">کۆنتڕۆڵ پەنێڵ</h3>
+                <p class="text-zinc-400 text-xs" data-i18n="admin_panel_subtitle">بەڕێوەبردنی ڕۆڵەکان و ئاپلۆدکردنی فیلم</p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex items-center justify-center gap-2 border-b border-zinc-800 pb-3">
+                <button id="tab-btn-roles" onclick="switchAdminTab('roles')" class="bg-rose-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition" data-i18n="roles_tab">بەشی ڕۆڵەکان (تەنها ئۆنەر)</button>
+                <button id="tab-btn-upload" onclick="switchAdminTab('upload')" class="bg-zinc-800 text-zinc-400 hover:text-white font-bold text-xs py-2 px-4 rounded-xl transition" data-i18n="upload_tab">ئاپلۆدکردنی فیلم</button>
+            </div>
+
+            <!-- ROLE MANAGEMENT TAB (OWNER ONLY) -->
+            <div id="admin-tab-roles" class="space-y-4 text-right">
+                <div id="owner-only-warning" class="hidden text-center text-rose-500 font-bold text-xs py-4" data-i18n="owner_only">
+                    تەنها ئۆنەر مافی دەستکاری کردنی ڕۆڵەکانی هەیە!
+                </div>
+                <div id="owner-role-section" class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="search_account">سێرچی ئەکاونت</label>
+                        <div class="relative">
+                            <input id="user-search-input" oninput="handleUserSearch()" type="text" placeholder="ناوی ئەکاونت بنووسە..." class="w-full bg-zinc-800 border border-zinc-700 text-white pr-4 pl-10 py-2.5 rounded-xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="search" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+                    <div id="user-search-results" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- MOVIE UPLOADER TAB (OWNER & ADMIN) -->
+            <div id="admin-tab-upload" class="hidden space-y-4 text-right">
+                <form onsubmit="handleMovieUpload(event)" class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="movie_name_en">ناوی فیلم (ئینگلیزی)</label>
+                        <input id="up-title" type="text" required placeholder="e.g. Wrath of Man" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="movie_name_ku">ناوی فیلم (کوردی)</label>
+                        <input id="up-title-kurdish" type="text" required placeholder="تووڕەیی پیاوێک" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="category">پۆلێن</label>
+                            <select id="up-category" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                                <option value="hollywood" data-i18n="cat_hollywood">هۆڵیود</option>
+                                <option value="bollywood" data-i18n="cat_bollywood">بۆلیوود</option>
+                                <option value="foreign" data-i18n="cat_foreign">بیانی</option>
+                                <option value="persian" data-i18n="cat_persian">فارسی</option>
+                                <option value="spanish" data-i18n="cat_spanish">ئیسپانی</option>
+                                <option value="comics" data-i18n="cat_comics">کۆمیکس</option>
+                                <option value="asian" data-i18n="cat_asian">کۆری، چینی، ژاپۆنی</option>
+                                <option value="anime" data-i18n="cat_anime">ئەنیمی و کارتۆن</option>
+                                <option value="kurdish" data-i18n="cat_kurdish">کوردی</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="genre">جۆر</label>
+                            <select id="up-genre" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                                <option value="action" data-i18n="genre_action">ئاکشن</option>
+                                <option value="drama" data-i18n="genre_drama">دراما</option>
+                                <option value="thriller" data-i18n="genre_thriller">چیرۆکی هەستبزوێن</option>
+                                <option value="comedy" data-i18n="genre_comedy">کۆمیدی</option>
+                                <option value="adventure" data-i18n="genre_adventure">سەرکێشی</option>
+                                <option value="horror" data-i18n="genre_horror">ترسناک</option>
+                                <option value="crime" data-i18n="genre_crime">تاوان</option>
+                                <option value="romance" data-i18n="genre_romance">ڕۆمانسی</option>
+                                <option value="mystery" data-i18n="genre_mystery">نهێنی</option>
+                                <option value="sci-fi" data-i18n="genre_scifi">خەیاڵی زانستی</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="imdb_rating">ڕەیتی لە IMDb</label>
+                            <input id="up-imdb" type="text" required placeholder="7.5" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="duration">ماوە (خولەک)</label>
+                            <input id="up-duration" type="text" required placeholder="120 خولەک" class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl focus:outline-none focus:border-rose-600">
+                        </div>
+                    </div>
+
+                    <!-- POSTER FILE OR LINK (ENGLISH & KURDISH) -->
+                    <div class="space-y-3 bg-zinc-800/50 p-3 rounded-xl border border-zinc-700">
+                        <label class="text-zinc-200 text-xs font-bold block" data-i18n="poster_images">ڕەسمی فیلم (پۆستەر - دوو زمان)</label>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-[11px]" data-i18n="poster_en">پۆستەری ئینگلیزی</label>
+                            <input id="up-poster-file-en" type="file" accept="image/*" class="w-full text-xs text-zinc-400 bg-zinc-800 rounded-xl p-1.5 border border-zinc-700">
+                            <input id="up-poster-url-en" type="url" placeholder="یان لینکی ڕەسمی ئینگلیزی..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-[11px]" data-i18n="poster_ku">پۆستەری کوردی</label>
+                            <input id="up-poster-file-ku" type="file" accept="image/*" class="w-full text-xs text-zinc-400 bg-zinc-800 rounded-xl p-1.5 border border-zinc-700">
+                            <input id="up-poster-url-ku" type="url" placeholder="یان لینکی ڕەسمی کوردی..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        </div>
+                    </div>
+
+                    <!-- TRAILER FILE OR LINK -->
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="trailer">ترایلەری فیلم</label>
+                        <input id="up-trailer-file" type="file" accept="video/*" class="w-full text-xs text-zinc-400 bg-zinc-800 rounded-xl p-1.5 border border-zinc-700">
+                        <input id="up-trailer-url" type="url" placeholder="یان لینکی ترایلەر (YouTube/Embed)..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                    </div>
+
+                    <!-- MOVIE SERVERS LINKS -->
+                    <div class="space-y-3 bg-zinc-800/50 p-3 rounded-xl border border-zinc-700">
+                        <label class="text-zinc-200 text-xs font-bold block">لینکەکانی سێرڤەری فیلم (Embed URLs)</label>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-[11px]">سێرڤەری ١ (Streamwish)</label>
+                            <input id="up-server1" type="url" placeholder="لینکی سێرڤەری ١..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-[11px]">سێرڤەری ٢ (Vidhide)</label>
+                            <input id="up-server2" type="url" placeholder="لینکی سێرڤەری ٢..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-[11px]">سێرڤەری ٣ (Doodstream)</label>
+                            <input id="up-server3" type="url" placeholder="لینکی سێرڤەری ٣..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="story_en">دیسکریپشن (ئینگلیزی)</label>
+                            <textarea id="up-story-en" required rows="2" placeholder="English description..." class="w-full bg-zinc-800 border border-zinc-700 text-white p-3 rounded-xl focus:outline-none focus:border-rose-600 text-xs resize-none"></textarea>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-zinc-400 text-xs font-medium" data-i18n="story_ku">دیسکریپشن (کوردی)</label>
+                            <textarea id="up-story-ku" required rows="2" placeholder="کورتەی فیلم بە کوردی..." class="w-full bg-zinc-800 border border-zinc-700 text-white p-3 rounded-xl focus:outline-none focus:border-rose-600 text-xs resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:opacity-90 text-white font-bold py-3 rounded-2xl text-xs shadow-lg transition active:scale-95" data-i18n="upload_btn">
+                        ئاپلۆدکردنی فیلم
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden p-4">
+        <div class="max-w-xl mx-auto mt-4 space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <span class="text-white font-bold text-base" data-i18n="smart_search">گەڕانی زیرەک</span>
+                <button onclick="toggleSearchModal()" class="text-zinc-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="relative">
+                <input id="smart-search-input" oninput="handleLiveSearch()" type="text" placeholder="ناوی فیلمەکە بنووسە..." class="w-full bg-zinc-900 border border-rose-600/50 text-white pr-10 pl-4 py-3 rounded-xl focus:outline-none focus:border-rose-600">
+                <i data-lucide="search" class="w-5 h-5 text-rose-500 absolute right-3 top-3.5"></i>
+            </div>
+            <div id="search-results" class="space-y-2 max-h-[70vh] overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div id="forgot-password-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full space-y-4 relative shadow-2xl">
+            <button onclick="toggleForgotPasswordModal()" class="absolute top-4 left-4 text-zinc-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <i data-lucide="key-round" class="w-10 h-10 text-rose-500 mx-auto"></i>
+                <h3 class="text-lg font-bold text-white" data-i18n="forgot_title">گێڕانەوەی وشەی نهێنی</h3>
+                <p class="text-zinc-400 text-xs" data-i18n="forgot_desc">ئیمەیڵەکەت بنووسە بۆئەوەی لینکی ڕێکخستنەوەی وشەی نهێنیت بۆ بنێرین</p>
+            </div>
+            <form onsubmit="handleForgotPasswordSubmit(event)" class="space-y-4 text-right">
+                <div class="space-y-1.5">
+                    <label class="text-zinc-400 text-xs font-medium" data-i18n="email">ئیمەیل</label>
+                    <div class="relative">
+                        <input id="forgot-email" type="email" required placeholder="ئیمەیلەکەت بنووسە..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                        <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-2xl text-xs shadow-lg shadow-rose-600/20 transition active:scale-95" data-i18n="send_link">
+                    ناردنی لینک
+                </button>
+            </form>
+            <p id="forgot-status-msg" class="text-xs text-center hidden font-medium"></p>
+        </div>
+    </div>
+
+    <div id="filter-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex flex-col justify-end sm:justify-center">
+        <div class="bg-[#121217] border border-zinc-800 rounded-t-3xl sm:rounded-2xl max-w-lg w-full mx-auto h-[85vh] sm:h-[80vh] flex flex-col relative overflow-hidden">
+            
+            <div class="p-4 border-b border-zinc-800/80 flex items-center justify-between">
+                <button onclick="toggleFilterModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-800/60 text-zinc-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2 text-rose-500 font-bold text-base">
+                    <span data-i18n="filter_title">فلتەرکردن</span>
+                    <i data-lucide="filter" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-6 overflow-y-auto flex-1 text-right">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-sm">
+                        <span data-i18n="filter_movies">فیلم</span>
+                        <i data-lucide="film" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-end" id="filter-category-group">
+                        <button onclick="selectFilter('cat', 'all', this)" class="filter-cat-btn filter-btn-active bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="all_movies">هەموو فیلمەکان</span> (<span id="cat-count-all">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'hollywood', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_hollywood">هۆڵیود</span> (<span id="cat-count-hollywood">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'bollywood', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_bollywood">بۆلیوود</span> (<span id="cat-count-bollywood">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'foreign', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_foreign">بیانی</span> (<span id="cat-count-foreign">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'persian', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_persian">فارسی</span> (<span id="cat-count-persian">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'spanish', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_spanish">ئیسپانی</span> (<span id="cat-count-spanish">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'comics', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_comics">کۆمیکس</span> (<span id="cat-count-comics">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'asian', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_asian">کۆری، چینی، ژاپۆنی</span> (<span id="cat-count-asian">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'anime', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_anime">ئەنیمی و کارتۆن</span> (<span id="cat-count-anime">0</span>)</button>
+                        <button onclick="selectFilter('cat', 'kurdish', this)" class="filter-cat-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="cat_kurdish">کوردی</span> (<span id="cat-count-kurdish">0</span>)</button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-sm">
+                        <span data-i18n="filter_genre">جۆر</span>
+                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-end" id="filter-genre-group">
+                        <button onclick="selectFilter('genre', 'all', this)" class="filter-genre-btn filter-btn-active bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="all_genres">هەموو جۆرەکان</span> (<span id="genre-count-all">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'drama', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_drama">دراما</span> (<span id="genre-count-drama">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'action', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_action">ئاکشن</span> (<span id="genre-count-action">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'thriller', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_thriller">چیرۆکی هەستبزوێن</span> (<span id="genre-count-thriller">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'comedy', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_comedy">کۆمیدی</span> (<span id="genre-count-comedy">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'adventure', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_adventure">سەرکێشی</span> (<span id="genre-count-adventure">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'horror', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_horror">ترسناک</span> (<span id="genre-count-horror">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'crime', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_crime">تاوان</span> (<span id="genre-count-crime">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'romance', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_romance">ڕۆمانسی</span> (<span id="genre-count-romance">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'mystery', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_mystery">نهێنی</span> (<span id="genre-count-mystery">0</span>)</button>
+                        <button onclick="selectFilter('genre', 'sci-fi', this)" class="filter-genre-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium"><span data-i18n="genre_scifi">خەیاڵی زانستی</span> (<span id="genre-count-scifi">0</span>)</button>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pb-6">
+                    <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-sm">
+                        <span data-i18n="filter_sort">ڕیزکردن</span>
+                        <i data-lucide="arrow-down-wide-narrow" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-end" id="filter-sort-group">
+                        <button onclick="selectFilter('sort', 'featured', this)" class="filter-sort-btn filter-btn-active bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium" data-i18n="sort_featured">پێشگیریمان</button>
+                        <button onclick="selectFilter('sort', 'newest', this)" class="filter-sort-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium" data-i18n="sort_newest">نوێترین</button>
+                        <button onclick="selectFilter('sort', 'views', this)" class="filter-sort-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium" data-i18n="sort_views">زۆر بینراو</button>
+                        <button onclick="selectFilter('sort', 'rating', this)" class="filter-sort-btn bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 text-xs px-3.5 py-2 rounded-full font-medium" data-i18n="sort_rating">باشترین ڕەیتین</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 border-t border-zinc-800/80 bg-[#121217] flex items-center gap-3">
+                <button onclick="applyFilters()" class="flex-1 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20">
+                    <i data-lucide="check" class="w-4 h-4"></i> <span data-i18n="apply">جێبەجێکردن</span>
+                </button>
+                <button onclick="resetFilters()" class="bg-zinc-800/90 hover:bg-zinc-800 text-zinc-300 font-bold py-3 px-5 rounded-xl text-sm flex items-center justify-center gap-2 border border-zinc-700/60">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> <span data-i18n="reset">ڕێسێت</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-3">
+
+        <section id="page-home" class="space-y-6 pt-2 sm:pt-4">
+            
+            <div class="relative rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800/80 h-[520px] sm:h-[600px] flex flex-col justify-between p-5 sm:p-7 shadow-2xl group">
+                <img id="hero-slider-bg" src="" class="absolute inset-0 w-full h-full object-cover opacity-40 transition-all duration-700 scale-105 group-hover:scale-100">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-[#0b0b0e]/40 to-black/30"></div>
+                
+                <div class="relative z-10 flex items-center justify-between pt-14 sm:pt-16">
+                    <span class="bg-rose-600/90 text-white font-bold text-[11px] px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-lg border border-rose-500/30" data-i18n="latest_10">
+                        🔥 ۱۰ تازەترین ئاپلۆدکراو
+                    </span>
+                    <button onclick="toggleFilterModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-full text-xs flex items-center gap-2 shadow-lg shadow-rose-600/30 transition transform active:scale-95">
+                        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> 
+                        <span data-i18n="filter">فلتەرکردن</span> 
+                        <span id="active-filter-badge" class="hidden bg-white text-rose-600 font-extrabold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                </div>
+
+                <div class="relative z-10 text-center space-y-4 pb-4">
+                    <span id="hero-slider-counter" class="text-zinc-300 text-xs font-semibold block tracking-wide">١ لە ۱۰</span>
+                    <h1 id="hero-slider-title" class="text-2xl sm:text-4xl font-extrabold text-white tracking-wide truncate drop-shadow-md">---</h1>
+                    
+                    <div class="flex items-center justify-center gap-4 pt-2">
+                        <button onclick="prevHeroSlide()" class="p-2.5 bg-black/60 hover:bg-rose-600 text-white rounded-full border border-zinc-700 backdrop-blur-md transition active:scale-90">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                        <button id="hero-slider-btn" onclick="" class="bg-white text-black font-extrabold px-7 py-2.5 rounded-full text-xs sm:text-sm hover:bg-rose-600 hover:text-white transition duration-300 shadow-xl" data-i18n="watch_movie_btn">
+                            سەیرکردنی فیلم
+                        </button>
+                        <button onclick="nextHeroSlide()" class="p-2.5 bg-black/60 hover:bg-rose-600 text-white rounded-full border border-zinc-700 backdrop-blur-md transition active:scale-90">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative z-10 flex justify-center gap-1.5 pb-2" id="hero-slider-dots"></div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="text-white font-bold text-sm" id="results-count-title" data-i18n="selected_movies">فیلمە هەڵبژێردراوەکان</h3>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="home-movies-grid"></div>
+            </div>
+        </section>
+
+        <!-- PROFILE / ACCOUNT PAGE -->
+        <section id="page-profile" class="hidden pt-12 space-y-6">
+            <div class="relative rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl min-h-[480px] flex flex-col justify-between">
+                <!-- Cover Image & Change Cover Button -->
+                <div class="absolute inset-0 z-0">
+                    <img id="profile-cover-img" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover opacity-40">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-black/50 to-transparent"></div>
+                    <label class="absolute top-4 left-4 z-20 bg-black/60 hover:bg-black/80 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 cursor-pointer transition active:scale-95 flex items-center gap-1.5 text-xs font-medium">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                        <span data-i18n="change_cover">گۆڕینی کەڤەر</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="changeProfileImage(event, 'profile-cover-img')">
+                    </label>
+                </div>
+
+                <div class="relative z-10 pt-10 px-6 text-center space-y-4">
+                    <!-- Profile Avatar & Change Avatar Button -->
+                    <div class="relative w-28 h-28 mx-auto group">
+                        <img id="profile-avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80" class="w-28 h-28 rounded-3xl object-cover border-4 border-amber-500/80 shadow-2xl">
+                        <label class="absolute -bottom-1 -right-1 bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-full shadow-lg border-2 border-zinc-900 cursor-pointer transition active:scale-95">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
+                            <input type="file" accept="image/*" class="hidden" onchange="changeProfileImage(event, 'profile-avatar-img')">
+                        </label>
+                    </div>
+
+                    <div class="space-y-1">
+                        <h2 id="profile-username-display" class="text-2xl font-black text-white">Belal</h2>
+                        <div class="flex items-center justify-center gap-2 text-zinc-400 text-xs">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span data-i18n="member_since">ئەندام له 2026</span>
+                            <span id="profile-role-badge" class="bg-rose-600/80 text-white font-bold px-2 py-0.5 rounded-full text-[10px]"></span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="max-w-xs mx-auto space-y-2 pt-2">
+                        <button onclick="switchProfileTab('favorites')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition">
+                            <i data-lucide="heart" class="w-4 h-4"></i> <span data-i18n="favorites">دڵخواز</span>
+                        </button>
+                        <button onclick="switchProfileTab('history')" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition">
+                            <i data-lucide="history" class="w-4 h-4"></i> <span data-i18n="history">هیستۆری</span>
+                        </button>
+                        <button onclick="shareWebsite()" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> <span data-i18n="share">هاوبەشیکردن</span>
+                        </button>
+                        <button onclick="handleLogout()" class="w-full bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 border border-rose-800/50 font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> <span data-i18n="logout">چوونه‌ده‌ره‌وه</span>
+                        </button>
+                    </div>
+
+                    <!-- Profile Stats Grid -->
+                    <div class="grid grid-cols-3 gap-2 pt-6">
+                        <div onclick="switchProfileTab('comments')" id="tab-btn-comments" class="bg-zinc-900/80 border border-zinc-700/80 hover:border-rose-600 p-3 rounded-2xl cursor-pointer transition text-center">
+                            <span id="profile-comments-count" class="block text-white font-black text-lg">0</span>
+                            <span class="text-zinc-400 text-[11px] font-semibold" data-i18n="comments_stat">کۆمێنت</span>
+                        </div>
+                        <div onclick="switchProfileTab('favorites')" id="tab-btn-favorites" class="bg-zinc-900/80 border border-zinc-700/80 hover:border-rose-600 p-3 rounded-2xl cursor-pointer transition text-center">
+                            <span id="profile-favorites-count" class="block text-white font-black text-lg">0</span>
+                            <span class="text-zinc-400 text-[11px] font-semibold" data-i18n="favorites_stat">دڵخواز</span>
+                        </div>
+                        <div onclick="switchProfileTab('history')" id="tab-btn-history" class="bg-zinc-900/80 border border-zinc-700/80 hover:border-rose-600 p-3 rounded-2xl cursor-pointer transition text-center">
+                            <span id="profile-history-count" class="block text-white font-black text-lg">0</span>
+                            <span class="text-zinc-400 text-[11px] font-semibold" data-i18n="history_stat">هیستۆری</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tab Output Data Grid -->
+            <div class="space-y-3 pt-2">
+                <h3 id="profile-tab-title" class="text-white font-bold text-base border-r-4 border-rose-600 pr-2">کۆمێنتەکانت</h3>
+                <div id="profile-tab-content" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- LOGIN FORM PAGE -->
+        <section id="page-login" class="hidden pt-12 max-w-md mx-auto">
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl relative">
+                <button onclick="navigateTo('home')" class="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs font-semibold mr-auto">
+                    <span data-i18n="back_home">گەڕانەوە بۆ سەرەتا</span>
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </button>
+
+                <div class="text-center space-y-2">
+                    <span class="text-2xl font-black tracking-wider text-white">
+                        <span class="text-rose-600">F</span>ILMFLI<span class="text-rose-600">X</span>
+                    </span>
+                    <p class="text-zinc-400 text-[11px]" data-i18n="slogan">یە‌کە‌مین و پربینە‌ترین وێبسایتی تایبە‌ت بە سینە‌ما</p>
+                </div>
+
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl font-extrabold text-white" data-i18n="login_title">چوونەژوورەوە</h2>
+                    <p class="text-zinc-400 text-xs" data-i18n="login_subtitle">بەخێربێیتەوە! تکایە زانیاریەکانت بنووسە</p>
+                </div>
+
+                <form onsubmit="handleAccountLogin(event)" class="space-y-4 text-right">
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="email">ئیمەیل</label>
+                        <div class="relative">
+                            <input id="login-email" type="email" required placeholder="ئیمەیل بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="password">وشەی نهێنی</label>
+                        <div class="relative">
+                            <input id="login-pass" type="password" required placeholder="وشەی نهێنی بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="lock" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <label class="flex items-center gap-2 text-zinc-400 cursor-pointer">
+                            <input type="checkbox" class="accent-rose-600 rounded" checked>
+                            <span data-i18n="remember_me">لەبیرم بێت</span>
+                        </label>
+                        <button type="button" onclick="toggleForgotPasswordModal()" class="text-rose-500 hover:underline" data-i18n="forgot_password">وشەی نهێنیت لەبیرچووە?</button>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3.5 rounded-2xl text-xs shadow-lg shadow-cyan-500/20 transition active:scale-95" data-i18n="login_btn">
+                        چوونەژوورەوە
+                    </button>
+                </form>
+
+                <div class="text-center pt-2 border-t border-zinc-800/80">
+                    <p class="text-zinc-400 text-xs">
+                         <span data-i18n="no_account">هەژمارت نییە؟</span> 
+                        <button onclick="navigateTo('register')" class="text-rose-500 font-bold hover:underline" data-i18n="register_link">تۆمارکردن</button>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- REGISTER FORM PAGE -->
+        <section id="page-register" class="hidden pt-12 max-w-md mx-auto">
+            <div class="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl relative">
+                <button onclick="navigateTo('home')" class="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs font-semibold mr-auto">
+                    <span data-i18n="back_home">گەڕانەوە بۆ سەرەتا</span>
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                </button>
+
+                <div class="text-center space-y-2">
+                    <span class="text-2xl font-black tracking-wider text-white">
+                        <span class="text-rose-600">F</span>ILMFLI<span class="text-rose-600">X</span>
+                    </span>
+                    <p class="text-zinc-400 text-[11px]" data-i18n="slogan">یە‌کە‌مین و پربینە‌ترین وێبسایتی تایبە‌ت بە سینە‌ما</p>
+                </div>
+
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl font-extrabold text-white" data-i18n="register_title">دروستکردنی هەژمار</h2>
+                    <p class="text-zinc-400 text-xs" data-i18n="register_subtitle">بەخێربێیت! هەژمارێکی نوێ دروستبکە</p>
+                </div>
+
+                <form onsubmit="handleAccountRegister(event)" class="space-y-4 text-right">
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="full_name">ناوی تەواو</label>
+                        <div class="relative">
+                            <input id="reg-name" type="text" required placeholder="ناو بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="user" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="email">ئیمەیل</label>
+                        <div class="relative">
+                            <input id="reg-email" type="email" required placeholder="ئیمەیل بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="password">وشەی نهێنی</label>
+                        <div class="relative">
+                            <input id="reg-pass" type="password" required placeholder="وشەی نهێنی بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="lock" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-zinc-400 text-xs font-medium" data-i18n="confirm_password">دووبارەکردنەوەی وشەی نهێنی</label>
+                        <div class="relative">
+                            <input type="password" required placeholder="وشەی نهێنی بنووسرێت..." class="w-full bg-zinc-800/80 border border-zinc-700/80 text-white pr-4 pl-10 py-3 rounded-2xl focus:outline-none focus:border-rose-600">
+                            <i data-lucide="lock" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <input type="checkbox" required class="accent-rose-600 rounded">
+                        <span class="text-zinc-400 text-xs" data-i18n="terms_agree">ڕازیم بە مەرجەکانی بەکارهێنان و سیاسەتی تایبەتمەندی</span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-cyan-500 hover:opacity-90 text-white font-bold py-3.5 rounded-2xl text-xs shadow-lg shadow-cyan-500/20 transition active:scale-95" data-i18n="register_btn">
+                        تۆمارکردن
+                    </button>
+                </form>
+
+                <div class="text-center pt-2 border-t border-zinc-800/80">
+                    <p class="text-zinc-400 text-xs">
+                        <span data-i18n="has_account">پێشتر هەژمارت هەیە؟</span> 
+                        <button onclick="navigateTo('login')" class="text-purple-400 font-bold hover:underline" data-i18n="login_link">چوونەژوورەوە</button>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-details" class="hidden space-y-6 pt-16">
+            <div class="flex flex-col items-center text-center space-y-4 pt-2">
+                <div class="relative w-56 rounded-xl overflow-hidden shadow-2xl border border-zinc-800">
+                    <img id="detail-poster" src="" class="w-full object-cover">
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="openPlayerPage()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-4 h-4 fill-white"></i> <span data-i18n="watch_online">بینینی ئۆنلاین</span>
+                    </button>
+                    <button onclick="toggleFavoriteMovie()" id="fav-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white p-3 rounded-xl border border-zinc-700 transition">
+                        <i id="fav-icon" data-lucide="heart" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <h1 id="detail-title" class="text-xl font-bold text-white">---</h1>
+                <div class="flex flex-wrap items-center justify-center gap-1.5 text-xs font-semibold">
+                    <span id="detail-views" class="bg-zinc-900 border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded-md">---</span>
+                    <span id="detail-duration" class="bg-zinc-900 border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded-md">---</span>
+                    <span id="detail-imdb" class="bg-amber-500 text-black font-extrabold px-2.5 py-1 rounded-md">---</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <p id="detail-story" class="text-zinc-300 text-xs sm:text-sm leading-relaxed text-right bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">---</p>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <h2 class="text-white font-bold text-base" data-i18n="trailer_title">ترایلەر</h2>
+                <div id="video-box" class="relative aspect-video rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center">
+                    <img id="detail-trailer-bg" src="" class="absolute inset-0 w-full h-full object-cover opacity-40">
+                    <iframe id="trailer-iframe" class="w-full h-full hidden absolute inset-0" src="" frameborder="0" allowfullscreen></iframe>
+                    <video id="trailer-video" class="w-full h-full hidden absolute inset-0" controls></video>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-6 border-t border-zinc-800">
+                <h3 class="text-white font-bold text-base border-r-4 border-rose-600 pr-2" data-i18n="similar_movies">فیلمی هاوشێوە</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="similar-movies-grid"></div>
+            </div>
+        </section>
+
+        <section id="page-watch" class="hidden space-y-6 pt-16">
+            <div class="relative rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800/80 h-[400px] sm:h-[480px] flex flex-col justify-end p-6 shadow-2xl">
+                <img id="watch-hero-bg" src="" class="absolute inset-0 w-full h-full object-cover opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0e] via-[#0b0b0e]/50 to-transparent"></div>
+                
+                <div class="relative z-10 text-right space-y-2 pb-2">
+                    <h1 id="watch-movie-title" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wide">---</h1>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-right">
+                <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-xs">
+                    <span>:Server</span>
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                </div>
+                <div class="relative max-w-full">
+                    <select id="server-select" onchange="changeServer(this.value)" class="w-full bg-[#16161d] border border-zinc-800 text-zinc-200 py-3.5 px-4 rounded-2xl text-center text-sm font-semibold appearance-none focus:outline-none focus:border-rose-600">
+                        <option value="s1">Streamwish -1</option>
+                        <option value="s2">Vidhide Fast -2</option>
+                        <option value="s3">Doodstream -3</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-400">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative aspect-video rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-2xl group flex items-center justify-center">
+                <img id="watch-player-poster" src="" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                <iframe id="watch-video-iframe" class="w-full h-full hidden absolute inset-0" src="" frameborder="0" allowfullscreen></iframe>
+                <video id="watch-video-player" class="w-full h-full hidden absolute inset-0" controls></video>
+                
+                <button id="watch-play-btn" onclick="startMovieStream()" class="relative z-10 w-16 h-16 bg-sky-500/90 hover:bg-sky-500 text-white rounded-2xl flex items-center justify-center shadow-2xl transition transform group-hover:scale-110">
+                    <i data-lucide="play" class="w-8 h-8 fill-white ml-1"></i>
+                </button>
+            </div>
+
+            <div id="internal-ad-container" class="hidden"></div>
+
+            <div class="bg-[#121217] border border-zinc-800/80 p-5 rounded-2xl space-y-3 text-right">
+                <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-sm border-b border-zinc-800/60 pb-2">
+                    <span data-i18n="story_summary">کورته</span>
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                </div>
+                <p id="watch-movie-story" class="text-zinc-300 text-xs sm:text-sm leading-relaxed font-normal">---</p>
+            </div>
+
+            <div class="bg-[#121217] border border-zinc-800/80 p-5 rounded-2xl space-y-4 text-right">
+                <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3">
+                    <span id="comments-count" class="text-zinc-400 text-xs font-semibold">(٠) کۆمێنت</span>
+                    <div class="flex items-center gap-2 text-rose-500 font-bold text-sm">
+                        <span data-i18n="viewers_opinion">بۆچوونی بینەران</span>
+                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <textarea id="comment-input-text" onclick="checkAuthForComment()" placeholder="بۆچوونی خۆت لەسەر ئەم فیلمە بنووسە..." class="w-full bg-zinc-900 border border-zinc-800 text-white p-3.5 rounded-xl focus:outline-none focus:border-rose-600 transition resize-none h-24"></textarea>
+                    
+                    <div class="flex justify-start">
+                        <button onclick="submitComment()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs flex items-center gap-2 transition active:scale-95 shadow-lg shadow-rose-600/20">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> <span data-i18n="send_comment">ناردنی کۆمێنت</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="comments-list" class="space-y-3 pt-3 border-t border-zinc-800/40"></div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-end gap-2 border-r-4 border-rose-600 pr-2">
+                    <h3 class="text-white font-bold text-base" data-i18n="similar_movies">فیلمی هاوشێوە</h3>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="watch-similar-movies-grid"></div>
+            </div>
+
+            <div class="space-y-4 pt-4">
+                <div class="flex items-center justify-between border-r-4 border-rose-600 pr-2">
+                    <h3 class="text-white font-bold text-base flex items-center gap-1.5">
+                        <span class="text-amber-500">🔥</span> <span data-i18n="most_viewed">زۆرترین بینراو</span>
+                    </h3>
+                </div>
+
+                <div class="flex items-center justify-center gap-2 bg-zinc-900/80 p-1.5 rounded-full border border-zinc-800 max-w-xs mx-auto">
+                    <button onclick="switchMostViewedTab('week', this)" class="most-viewed-tab-btn bg-rose-600 text-white font-bold text-xs py-2 px-5 rounded-full transition-all duration-300" data-i18n="tab_week">هەفتە</button>
+                    <button onclick="switchMostViewedTab('month', this)" class="most-viewed-tab-btn bg-transparent text-zinc-400 hover:text-white font-bold text-xs py-2 px-5 rounded-full transition-all duration-300" data-i18n="tab_month">مانگ</button>
+                    <button onclick="switchMostViewedTab('year', this)" class="most-viewed-tab-btn bg-transparent text-zinc-400 hover:text-white font-bold text-xs py-2 px-5 rounded-full transition-all duration-300" data-i18n="tab_year">ساڵ</button>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="most-viewed-movies-grid"></div>
+            </div>
+
+            <div id="company-ads-container" class="space-y-3 pt-6 border-t border-zinc-800/80 hidden"></div>
+
+            <footer class="pt-8 pb-6 text-center space-y-6 border-t border-zinc-800/80">
+                <div class="space-y-2">
+                    <span class="text-2xl font-black tracking-wider text-white">
+                        <span class="text-rose-600">F</span>ILMFLI<span class="text-rose-600">X</span>
+                    </span>
+                    <p class="text-zinc-400 text-xs max-w-sm mx-auto leading-relaxed px-4" data-i18n="footer_desc">
+                        فیلمفلیکس یەکەمین و پربینەرترین ماڵپەڕی تایبەت بە فیلم و درامای کوردی و جیهانییەکان
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-center gap-3">
+                    <a href="#" class="w-11 h-11 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-white hover:border-rose-600 transition">
+                        <i data-lucide="instagram" class="w-5 h-5"></i>
+                    </a>
+                    <a href="#" class="w-11 h-11 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-white hover:border-rose-600 transition">
+                        <i data-lucide="facebook" class="w-5 h-5"></i>
+                    </a>
+                    <a href="#" class="w-11 h-11 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-white hover:border-rose-600 transition">
+                        <i data-lucide="youtube" class="w-5 h-5"></i>
+                    </a>
+                    <a href="#" class="w-11 h-11 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-300 hover:text-white hover:border-rose-600 transition">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </footer>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/95 backdrop-blur-lg border-t border-zinc-800/80 px-8 py-2.5">
+        <div class="max-w-xs mx-auto flex items-center justify-around">
+            <button onclick="navigateTo('home')" class="flex flex-col items-center gap-1 text-rose-500">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium" data-i18n="nav_home">سەرەتا</span>
+            </button>
+            <button onclick="handleAccountNavClick()" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white transition">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                <span id="nav-user-text" class="text-[10px] font-medium" data-i18n="nav_profile">پڕۆفایل / ئین</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Language System
+        let currentLang = localStorage.getItem('kc_lang') || 'ckb';
+
+        const translations = {
+            ckb: {
+                admin_panel_title: "کۆنتڕۆڵ پەنێڵ",
+                admin_panel_subtitle: "بەڕێوەبردنی ڕۆڵەکان و ئاپلۆدکردنی فیلم",
+                roles_tab: "بەشی ڕۆڵەکان (تەنها ئۆنەر)",
+                upload_tab: "ئاپلۆدکردنی فیلم",
+                owner_only: "تەنها ئۆنەر مافی دەستکاری کردنی ڕۆڵەکانی هەیە!",
+                search_account: "سێرچی ئەکاونت",
+                movie_name_en: "ناوی فیلم (ئینگلیزی)",
+                movie_name_ku: "ناوی فیلم (کوردی)",
+                category: "پۆلێن",
+                genre: "جۆر",
+                imdb_rating: "ڕەیتی لە IMDb",
+                duration: "ماوە (خولەک)",
+                poster_images: "ڕەسمی فیلم (پۆستەر - دوو زمان)",
+                poster_en: "پۆستەری ئینگلیزی",
+                poster_ku: "پۆستەری کوردی",
+                trailer: "ترایلەری فیلم",
+                movie_file: "پەڕگەی فیلمەکە (یان لینک)",
+                story_en: "دیسکریپشن (ئینگلیزی)",
+                story_ku: "دیسکریپشن (کوردی)",
+                upload_btn: "ئاپلۆدکردنی فیلم",
+                smart_search: "گەڕانی زیرەک",
+                forgot_title: "گێڕانەوەی وشەی نهێنی",
+                forgot_desc: "ئیمەیڵەکەت بنووسە بۆئەوەی لینکی ڕێکخستنەوەی وشەی نهێنیت بۆ بنێرین",
+                email: "ئیمەیل",
+                send_link: "ناردنی لینک",
+                filter_title: "فلتەرکردن",
+                filter_movies: "فیلم",
+                all_movies: "هەموو فیلمەکان",
+                filter_genre: "جۆر",
+                all_genres: "هەموو جۆرەکان",
+                filter_sort: "ڕیزکردن",
+                sort_featured: "پێشگیریمان",
+                sort_newest: "نوێترین",
+                sort_views: "زۆر بینراو",
+                sort_rating: "باشترین ڕەیتین",
+                apply: "جێبەجێکردن",
+                reset: "ڕێسێت",
+                latest_10: "🔥 ۱۰ تازەترین ئاپلۆدکراو",
+                filter: "فلتەرکردن",
+                watch_movie_btn: "سەیرکردنی فیلم",
+                selected_movies: "فیلمە هەڵبژێردراوەکان",
+                change_cover: "گۆڕینی کەڤەر",
+                member_since: "ئەندام له 2026",
+                favorites: "دڵخواز",
+                history: "هیستۆری",
+                share: "هاوبەشیکردن",
+                logout: "چوونه‌ده‌ره‌وه",
+                comments_stat: "کۆمێنت",
+                favorites_stat: "دڵخواز",
+                history_stat: "هیستۆری",
+                back_home: "گەڕانەوە بۆ سەرەتا",
+                slogan: "یە‌کە‌مین و پربینە‌ترین وێبسایتی تایبە‌ت بە سینە‌ما",
+                login_title: "چوونەژوورەوە",
+                login_subtitle: "بەخێربێیتەوە! تکایە زانیاریەکانت بنووسە",
+                password: "وشەی نهێنی",
+                remember_me: "لەبیرم بێت",
+                forgot_password: "وشەی نهێنیت لەبیرچووە?",
+                login_btn: "چوونەژوورەوە",
+                no_account: "هەژمارت نییە؟",
+                register_link: "تۆمارکردن",
+                register_title: "دروستکردنی هەژمار",
+                register_subtitle: "بەخێربێیت! هەژمارێکی نوێ دروستبکە",
+                full_name: "ناوی تەواو",
+                confirm_password: "دووبارەکردنەوەی وشەی نهێنی",
+                terms_agree: "ڕازیم بە مەرجەکانی بەکارهێنان و سیاسەتی تایبەتمەندی",
+                register_btn: "تۆمارکردن",
+                has_account: "پێشتر هەژمارت هەیە؟",
+                watch_online: "بینینی ئۆنلاین",
+                trailer_title: "ترایلەر",
+                similar_movies: "فیلمی هاوشێوە",
+                story_summary: "کورته",
+                viewers_opinion: "بۆچوونی بینەران",
+                send_comment: "ناردنی کۆمێنت",
+                most_viewed: "زۆرترین بینراو",
+                tab_week: "هەفتە",
+                tab_month: "مانگ",
+                tab_year: "ساڵ",
+                footer_desc: "فیلمفلیکس یەکەمین و پربینەرترین ماڵپەڕی تایبەت بە فیلم و درامای کوردی و جیهانییەکان",
+                nav_home: "سەرەتا",
+                nav_profile: "پڕۆفایل / ئین",
+                cat_hollywood: "هۆڵیود",
+                cat_bollywood: "بۆلیوود",
+                cat_foreign: "بیانی",
+                cat_persian: "فارسی",
+                cat_spanish: "ئیسپانی",
+                cat_comics: "کۆمیکس",
+                cat_asian: "کۆری، چینی، ژاپۆنی",
+                cat_anime: "ئەنیمی و کارتۆن",
+                cat_kurdish: "کوردی",
+                genre_action: "ئاکشن",
+                genre_drama: "دراما",
+                genre_thriller: "چیرۆکی هەستبزوێن",
+                genre_comedy: "کۆمیدی",
+                genre_adventure: "سەرکێشی",
+                genre_horror: "ترسناک",
+                genre_crime: "تاوان",
+                genre_romance: "ڕۆمانسی",
+                genre_mystery: "نهێنی",
+                genre_scifi: "خەیاڵی زانستی"
+            },
+            en: {
+                admin_panel_title: "Control Panel",
+                admin_panel_subtitle: "Manage roles and upload movies",
+                roles_tab: "Roles (Owner Only)",
+                upload_tab: "Upload Movie",
+                owner_only: "Only the owner has permission to modify roles!",
+                search_account: "Search Account",
+                movie_name_en: "Movie Name (English)",
+                movie_name_ku: "Movie Name (Kurdish)",
+                category: "Category",
+                genre: "Genre",
+                imdb_rating: "IMDb Rating",
+                duration: "Duration (Mins)",
+                poster_images: "Movie Poster (Bilingual)",
+                poster_en: "English Poster",
+                poster_ku: "Kurdish Poster",
+                trailer: "Movie Trailer",
+                movie_file: "Movie File (or Link)",
+                story_en: "Description (English)",
+                story_ku: "Description (Kurdish)",
+                upload_btn: "Upload Movie",
+                smart_search: "Smart Search",
+                forgot_title: "Password Recovery",
+                forgot_desc: "Enter your email to receive a password reset link",
+                email: "Email",
+                send_link: "Send Link",
+                filter_title: "Filter",
+                filter_movies: "Movie",
+                all_movies: "All Movies",
+                filter_genre: "Genre",
+                all_genres: "All Genres",
+                filter_sort: "Sort",
+                sort_featured: "Featured",
+                sort_newest: "Newest",
+                sort_views: "Most Viewed",
+                sort_rating: "Best Rating",
+                apply: "Apply",
+                reset: "Reset",
+                latest_10: "🔥 Top 10 Latest Uploads",
+                filter: "Filter",
+                watch_movie_btn: "Watch Movie",
+                selected_movies: "Selected Movies",
+                change_cover: "Change Cover",
+                member_since: "Member since 2026",
+                favorites: "Favorites",
+                history: "History",
+                share: "Share",
+                logout: "Logout",
+                comments_stat: "Comments",
+                favorites_stat: "Favorites",
+                history_stat: "History",
+                back_home: "Back to Home",
+                slogan: "The first and most popular cinema website",
+                login_title: "Login",
+                login_subtitle: "Welcome back! Please enter your details",
+                password: "Password",
+                remember_me: "Remember me",
+                forgot_password: "Forgot password?",
+                login_btn: "Login",
+                no_account: "Don't have an account?",
+                register_link: "Register",
+                register_title: "Create Account",
+                register_subtitle: "Welcome! Create a new account",
+                full_name: "Full Name",
+                confirm_password: "Confirm Password",
+                terms_agree: "I agree to Terms & Conditions and Privacy Policy",
+                register_btn: "Register",
+                has_account: "Already have an account?",
+                watch_online: "Watch Online",
+                trailer_title: "Trailer",
+                similar_movies: "Similar Movies",
+                story_summary: "Summary",
+                viewers_opinion: "Viewers' Opinions",
+                send_comment: "Send Comment",
+                most_viewed: "Most Viewed",
+                tab_week: "Week",
+                tab_month: "Month",
+                tab_year: "Year",
+                footer_desc: "Filmflix is the premier website for Kurdish and international movies and dramas",
+                nav_home: "Home",
+                nav_profile: "Profile / In",
+                cat_hollywood: "Hollywood",
+                cat_bollywood: "Bollywood",
+                cat_foreign: "Foreign",
+                cat_persian: "Persian",
+                cat_spanish: "Spanish",
+                cat_comics: "Comics",
+                cat_asian: "Korean, Chinese, Japanese",
+                cat_anime: "Anime & Cartoon",
+                cat_kurdish: "Kurdish",
+                genre_action: "Action",
+                genre_drama: "Drama",
+                genre_thriller: "Thriller",
+                genre_comedy: "Comedy",
+                genre_adventure: "Adventure",
+                genre_horror: "Horror",
+                genre_crime: "Crime",
+                genre_romance: "Romance",
+                genre_mystery: "Mystery",
+                genre_scifi: "Sci-Fi"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ckb' ? 'en' : 'ckb';
+            localStorage.setItem('kc_lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const btn = document.getElementById('lang-switch-btn');
+            if (currentLang === 'en') {
+                btn.innerText = "کوردی";
+            } else {
+                btn.innerText = "EN";
+            }
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+
+            if (currentActiveMovie) {
+                openMovieDetails(currentActiveMovie.id, true);
+            }
+            renderFilteredMovies();
+            initHeroSlider();
+        }
+
+        let userAccounts = JSON.parse(localStorage.getItem('kc_accounts')) || [
+            { name: 'Belal', email: 'belalbelalali5@gmail.com', pass: 'Belal5171', role: 'owner' },
+            { name: 'ئاریان', email: 'aryan@gmail.com', pass: '123456', role: 'admin' },
+            { name: 'ڕێبین', email: 'rebin@gmail.com', pass: '123456', role: 'member' }
+        ];
+
+        let currentUser = localStorage.getItem('kc_user') || 'Belal'; 
+        let userFavorites = JSON.parse(localStorage.getItem('kc_favs')) || ['m1', 'm3']; 
+        let userHistory = JSON.parse(localStorage.getItem('kc_hist')) || ['m1', 'm2', 'm5']; 
+        let userCommentsList = JSON.parse(localStorage.getItem('kc_user_comments')) || [
+            { movieTitle: 'Wrath of Man (2021)', text: 'فیلمێکی زۆر خۆش بوو بەڕاستی.', date: 'پێش کاتژمێرێک' }
+        ];
+
+        let profileAvatarSrc = localStorage.getItem('kc_avatar') || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80";
+        let profileCoverSrc = localStorage.getItem('kc_cover') || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80";
+
+        const movieComments = JSON.parse(localStorage.getItem('kc_movie_comments')) || {
+            'm1': [
+                { user: 'ئاریان سەلاح', text: 'بەڕاستی فیلمێکی زۆر نایاب و پڕ جۆش بوو، دەستان خۆش بیت.', date: 'پێش ٢ کاتژمێر' },
+                { user: 'دیار بەختیار', text: 'باشترین فیلمی Jason Statham بەڕای من.', date: 'پێش ٥ کاتژمێر' }
+            ]
+        };
+
+        const defaultMovies = [
+            { 
+                id: 'm1', 
+                title: 'Wrath of Man (2021)', 
+                titleKurdish: 'تووڕەیی پیاوێک', 
+                category: 'hollywood', 
+                genre: 'action', 
+                imdb: '7.4', 
+                views: 969804, 
+                uploadDate: 10, 
+                duration: '119 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1', 
+                servers: { s1: 'https://www.youtube.com/embed/dQw4w9WgXcQ', s2: '', s3: '' },
+                storyEn: 'A mysterious and wild-eyed new cash truck security guard surprises his co-workers during a heist...',
+                story: 'کەسێکی پر نهێنی دەبێتە پاسەوانێک کە لە بارهەڵگردا کار دەکات. لەکاتی هەوڵێکی دزیکردندا بە لێهاتوویی بێ وێنەوە ڕووبەڕووی دزەکان دەبێتەوە کە سەرنجی هەمووان بۆ خۆی ڕادەکێشێت...' 
+            },
+            { 
+                id: 'm2', 
+                title: 'Avengers: Endgame (2019)', 
+                titleKurdish: 'تۆڵەسێنەکان', 
+                category: 'hollywood', 
+                genre: 'action', 
+                imdb: '8.7', 
+                views: 1161777, 
+                uploadDate: 9, 
+                duration: '181 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: 'https://www.youtube.com/embed/TcMBFSGVi1c?autoplay=1', 
+                servers: { s1: 'https://www.youtube.com/embed/TcMBFSGVi1c', s2: '', s3: '' },
+                storyEn: 'After the devastating events of Avengers: Infinity War, the universe is in ruins...',
+                story: 'دوای وێرانکارییەکانی ثانۆس لە گەردووندا، تۆڵەسێنەکان کۆدەبنەوە بۆ گەڕاندنەوەی هاوسەنگی جیهان...' 
+            },
+            { 
+                id: 'm3', 
+                title: 'Interstellar (2014)', 
+                titleKurdish: 'نێوان ئەستێرەکان', 
+                category: 'hollywood', 
+                genre: 'sci-fi', 
+                imdb: '8.6', 
+                views: 840120, 
+                uploadDate: 8, 
+                duration: '169 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: 'https://www.youtube.com/embed/zSWdZVtXT7E?autoplay=1', 
+                servers: { s1: 'https://www.youtube.com/embed/zSWdZVtXT7E', s2: '', s3: '' },
+                storyEn: 'When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper...',
+                story: 'گەشتێکی ئەستێرەیی مەترسیدار لە ڕێگەی بڕینی کات و بۆشایی ئاسمان بۆ دۆزینەوەی گۆی زەوییەکی نوێ...' 
+            },
+            { 
+                id: 'm4', 
+                title: 'Jawan (2023)', 
+                titleKurdish: 'جەوان', 
+                category: 'bollywood', 
+                genre: 'action', 
+                imdb: '7.1', 
+                views: 520300, 
+                uploadDate: 7, 
+                duration: '169 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'A high-octane action thriller which outlines the emotional journey of a man...',
+                story: 'چیرۆکێکی پڕ ئاکشن لەسەر پیاوێک کە دەیەوێت دادپەروەری لە کۆمەڵگەدا بنێتەوە...' 
+            },
+            { 
+                id: 'm5', 
+                title: 'Money Heist (2021)', 
+                titleKurdish: 'ماڵی پارە', 
+                category: 'spanish', 
+                genre: 'thriller', 
+                imdb: '8.2', 
+                views: 2100000, 
+                uploadDate: 6, 
+                duration: '50 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'An unusual group of robbers attempt to carry out the most perfect robbery...',
+                story: 'پڕۆفیسۆر و تیمەکەی گەورەترین و زیرەکانەترین دزی مێژوو لە پەنکدا ئەنجام دەدەن...' 
+            },
+            { 
+                id: 'm6', 
+                title: 'Spirited Away (2001)', 
+                titleKurdish: 'شارۆچکەی ڕۆحەکان', 
+                category: 'anime', 
+                genre: 'adventure', 
+                imdb: '8.6', 
+                views: 430000, 
+                uploadDate: 5, 
+                duration: '125 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'During her family\'s move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods...',
+                story: 'کچێکی گەنج دەچێتە جیهانێکی ڕوحانی و سەرسوڕهێنەر بۆ ڕزگارکردنی دایک و باوکی...' 
+            },
+            { 
+                id: 'm7', 
+                title: 'The Dark Knight (2008)', 
+                titleKurdish: 'شەوانی تاریک', 
+                category: 'comics', 
+                genre: 'action', 
+                imdb: '9.0', 
+                views: 3100000, 
+                uploadDate: 4, 
+                duration: '152 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham...',
+                story: 'باتمان ڕووبەڕووی مەترسیدارترین و ئاڵۆزترین دوژمنی دەبێتەوە کە جوکەرە...' 
+            },
+            { 
+                id: 'm8', 
+                title: 'Parasite (2019)', 
+                titleKurdish: 'مشەخۆر', 
+                category: 'asian', 
+                genre: 'drama', 
+                imdb: '8.5', 
+                views: 910000, 
+                uploadDate: 3, 
+                duration: '132 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'Greed and class discrimination threaten the newly formed symbiotic relationship...',
+                story: 'خێزانێکی هەژار بە فێڵ خۆیان دەخەنە ناو ماڵی خێزانێکی زۆر دەوڵەمەندەوە...' 
+            },
+            { 
+                id: 'm9', 
+                title: 'The Conjuring (2013)', 
+                titleKurdish: 'بانگهێشتکردنی ڕۆح', 
+                category: 'hollywood', 
+                genre: 'horror', 
+                imdb: '7.5', 
+                views: 780000, 
+                uploadDate: 2, 
+                duration: '112 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'Paranormal investigators Ed and Lorraine Warren work to help a family terrorized by a dark presence...',
+                story: 'لێکۆڵەرە ڕۆحییەکان ڕووبەڕووی ماڵێکی جنۆکەدار و تاریک دەبنەوە...' 
+            },
+            { 
+                id: 'm10', 
+                title: '1917 (2019)', 
+                titleKurdish: '١٩١٧', 
+                category: 'hollywood', 
+                genre: 'drama', 
+                imdb: '8.2', 
+                views: 650000, 
+                uploadDate: 1, 
+                duration: '119 خولەک', 
+                posterEn: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80', 
+                posterKu: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80',
+                trailerUrl: '', 
+                servers: { s1: '', s2: '', s3: '' },
+                storyEn: 'April 6th, 1917. As an infantry battalion assembles to wage war deep in enemy territory...',
+                story: 'دوو سەربازی بەریتانی لە جەنگی یەکەمی جیهانی ئەرکێکی ئەستەم بۆ گەیاندنی پەیامێک ئەنجام دەدەن...' 
+            }
+        ];
+
+        let movies = JSON.parse(localStorage.getItem('kc_movies_db')) || defaultMovies;
+
+        movies.forEach(m => {
+            if (!m.posterEn) m.posterEn = m.poster || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
+            if (!m.posterKu) m.posterKu = m.poster || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
+            if (!m.storyEn) m.storyEn = m.story || '';
+            if (!m.storyKu) m.storyKu = m.story || '';
+            if (!m.servers) m.servers = { s1: m.movieUrl || '', s2: '', s3: '' };
+        });
+
+        const internalAds = [
+            { text: "گەورەترین پۆنسی بەخێرهاتن!", btn: "گرەوی تۆپی پێ" }
+        ];
+
+        const companyAds = [
+            { brand: "MELBET", title: "وەربگرە تا 3355300 دیناری عێراقی", desc: "بێتکردنی بێ سنوور + 180 FS", color: "amber" },
+            { brand: "COSMOSWIN", title: "تا 5000 دۆلار بۆنسی بەخێرهاتن", desc: "", color: "sky" }
+        ];
+
+        let activeFilters = { cat: 'all', genre: 'all', sort: 'featured' };
+        let currentSlideIndex = 0;
+        let latest10Movies = [];
+        let currentActiveMovie = null;
+
+        function getUserRole(username) {
+            const acc = userAccounts.find(a => a.name === username);
+            return acc ? acc.role : 'member';
+        }
+
+        function saveData() {
+            if (currentUser) localStorage.setItem('kc_user', currentUser);
+            else localStorage.removeItem('kc_user');
+            
+            localStorage.setItem('kc_accounts', JSON.stringify(userAccounts));
+            localStorage.setItem('kc_favs', JSON.stringify(userFavorites));
+            localStorage.setItem('kc_hist', JSON.stringify(userHistory));
+            localStorage.setItem('kc_user_comments', JSON.stringify(userCommentsList));
+            localStorage.setItem('kc_movie_comments', JSON.stringify(movieComments));
+            localStorage.setItem('kc_avatar', profileAvatarSrc);
+            localStorage.setItem('kc_cover', profileCoverSrc);
+            try {
+                localStorage.setItem('kc_movies_db', JSON.stringify(movies));
+            } catch (err) {
+                console.error("Storage full or quota exceeded", err);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (currentUser) {
+                document.getElementById('nav-user-text').innerText = currentUser;
+                const role = getUserRole(currentUser);
+                const roleBadge = document.getElementById('profile-role-badge');
+                if (roleBadge) {
+                    roleBadge.innerText = role === 'owner' ? 'ئۆنەر' : role === 'admin' ? 'ئادمین' : 'ئەندام';
+                }
+            }
+            document.getElementById('profile-avatar-img').src = profileAvatarSrc;
+            document.getElementById('profile-cover-img').src = profileCoverSrc;
+            
+            applyLanguage();
+            updateFilterCounts();
+            initHeroSlider();
+            renderFilteredMovies();
+            renderAds();
+            lucide.createIcons();
+        });
+
+        function formatViews(views) {
+            if (views === undefined || views === null || views === '' || isNaN(views)) return 0;
+            return Number(views).toLocaleString();
+        }
+
+        function updateFilterCounts() {
+            const categories = ['all', 'hollywood', 'bollywood', 'foreign', 'persian', 'spanish', 'comics', 'asian', 'anime', 'kurdish'];
+            categories.forEach(cat => {
+                const count = cat === 'all' ? movies.length : movies.filter(m => m.category === cat).length;
+                const el = document.getElementById(`cat-count-${cat}`);
+                if (el) el.innerText = count;
+                
+                if (cat !== 'all') {
+                    const btn = document.querySelector(`button[onclick*="selectFilter('cat', '${cat}'"]`);
+                    if (btn) {
+                        if (count === 0) {
+                            btn.classList.add('hidden');
+                        } else {
+                            btn.classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+
+            const genres = ['all', 'drama', 'action', 'thriller', 'comedy', 'adventure', 'horror', 'crime', 'romance', 'mystery', 'sci-fi'];
+            genres.forEach(genre => {
+                const count = genre === 'all' ? movies.length : movies.filter(m => m.genre === genre).length;
+                const el = document.getElementById(`genre-count-${genre}`);
+                if (el) el.innerText = count;
+
+                if (genre !== 'all') {
+                    const btn = document.querySelector(`button[onclick*="selectFilter('genre', '${genre}'"]`);
+                    if (btn) {
+                        if (count === 0) {
+                            btn.classList.add('hidden');
+                        } else {
+                            btn.classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('main-header');
+            if (window.scrollY > 20) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
+        });
+
+        function handleLogoClick() {
+            if (!currentUser) {
+                navigateTo('home');
+                return;
+            }
+            const role = getUserRole(currentUser);
+            if (role === 'owner' || role === 'admin') {
+                toggleAdminModal();
+            } else {
+                navigateTo('home');
+            }
+        }
+
+        function toggleAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                const role = getUserRole(currentUser);
+                if (role === 'owner') {
+                    switchAdminTab('roles');
+                } else {
+                    switchAdminTab('upload');
+                }
+            }
+        }
+
+        function switchAdminTab(tab) {
+            const rolesTab = document.getElementById('admin-tab-roles');
+            const uploadTab = document.getElementById('admin-tab-upload');
+            const btnRoles = document.getElementById('tab-btn-roles');
+            const btnUpload = document.getElementById('tab-btn-upload');
+
+            if (tab === 'roles') {
+                const role = getUserRole(currentUser);
+                if (role !== 'owner') {
+                    document.getElementById('owner-only-warning').classList.remove('hidden');
+                    document.getElementById('owner-role-section').classList.add('hidden');
+                } else {
+                    document.getElementById('owner-only-warning').classList.add('hidden');
+                    document.getElementById('owner-role-section').classList.remove('hidden');
+                }
+                rolesTab.classList.remove('hidden');
+                uploadTab.classList.add('hidden');
+                btnRoles.className = "bg-rose-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition";
+                btnUpload.className = "bg-zinc-800 text-zinc-400 hover:text-white font-bold text-xs py-2 px-4 rounded-xl transition";
+            } else {
+                rolesTab.classList.add('hidden');
+                uploadTab.classList.remove('hidden');
+                btnUpload.className = "bg-rose-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition";
+                btnRoles.className = "bg-zinc-800 text-zinc-400 hover:text-white font-bold text-xs py-2 px-4 rounded-xl transition";
+            }
+        }
+
+        function handleUserSearch() {
+            const query = document.getElementById('user-search-input').value.trim().toLowerCase();
+            const resultsBox = document.getElementById('user-search-results');
+            resultsBox.innerHTML = '';
+            if (!query) return;
+
+            const matches = userAccounts.filter(a => a.name.toLowerCase().includes(query));
+            matches.forEach(acc => {
+                resultsBox.innerHTML += `
+                    <div class="flex items-center justify-between bg-zinc-800/80 p-3 rounded-xl border border-zinc-700">
+                        <div class="flex items-center gap-2">
+                            <span class="text-white font-bold text-xs">${acc.name}</span>
+                            <span class="text-[10px] text-zinc-400">(${acc.email})</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="setUserRole('${acc.name}', 'admin')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${acc.role === 'admin' ? 'bg-amber-500 text-black' : 'bg-zinc-700 text-zinc-300 hover:text-white'}">ئادمین</button>
+                            <button onclick="setUserRole('${acc.name}', 'member')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${acc.role === 'member' ? 'bg-rose-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:text-white'}">میمبەر</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function setUserRole(username, newRole) {
+            if (getUserRole(currentUser) !== 'owner') return;
+            const target = userAccounts.find(a => a.name === username);
+            if (target) {
+                target.role = newRole;
+                saveData();
+                handleUserSearch();
+                alert(`ڕۆڵی ${username} بەسەرکەوتوویی گۆڕدرا بۆ ${newRole}`);
+            }
+        }
+
+        async function handleMovieUpload(e) {
+            e.preventDefault();
+            const role = getUserRole(currentUser);
+            if (role !== 'owner' && role !== 'admin') {
+                alert('تەنها ئۆنەر و ئادمین دەتوانن فیلم ئاپلۆد بکەن!');
+                return;
+            }
+
+            const title = document.getElementById('up-title').value.trim();
+            const titleKurdish = document.getElementById('up-title-kurdish').value.trim();
+            const category = document.getElementById('up-category').value;
+            const genre = document.getElementById('up-genre').value;
+            const imdb = document.getElementById('up-imdb').value.trim();
+            const duration = document.getElementById('up-duration').value.trim();
+            
+            const storyEn = document.getElementById('up-story-en').value.trim();
+            const storyKu = document.getElementById('up-story-ku').value.trim();
+
+            const posterFileEn = document.getElementById('up-poster-file-en').files[0];
+            const posterUrlEn = document.getElementById('up-poster-url-en').value.trim();
+
+            const posterFileKu = document.getElementById('up-poster-file-ku').files[0];
+            const posterUrlKu = document.getElementById('up-poster-url-ku').value.trim();
+            
+            const trailerFile = document.getElementById('up-trailer-file').files[0];
+            const trailerUrl = document.getElementById('up-trailer-url').value.trim();
+
+            const server1 = document.getElementById('up-server1').value.trim();
+            const server2 = document.getElementById('up-server2').value.trim();
+            const server3 = document.getElementById('up-server3').value.trim();
+
+            let finalPosterEn = posterUrlEn || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
+            if (posterFileEn) {
+                finalPosterEn = await readFileAsBase64(posterFileEn);
+            }
+
+            let finalPosterKu = posterUrlKu || finalPosterEn;
+            if (posterFileKu) {
+                finalPosterKu = await readFileAsBase64(posterFileKu);
+            }
+
+            let finalTrailer = trailerUrl || '';
+            if (trailerFile) {
+                finalTrailer = await readFileAsBase64(trailerFile);
+            }
+
+            const newMovie = {
+                id: 'm_' + Date.now(),
+                title: title,
+                titleKurdish: titleKurdish,
+                category: category,
+                genre: genre,
+                imdb: imdb,
+                views: 1,
+                uploadDate: Date.now(),
+                duration: duration,
+                posterEn: finalPosterEn,
+                posterKu: finalPosterKu,
+                trailerUrl: finalTrailer,
+                servers: { s1: server1, s2: server2, s3: server3 },
+                storyEn: storyEn,
+                storyKu: storyKu
+            };
+
+            movies.unshift(newMovie);
+            saveData();
+            updateFilterCounts();
+            initHeroSlider();
+            renderFilteredMovies();
+            toggleAdminModal();
+            alert('فیلمەکە بەسەرکەوتوویی ئاپلۆد کرا!');
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function initHeroSlider() {
+            latest10Movies = [...movies].slice(0, 10);
+            const dotsContainer = document.getElementById('hero-slider-dots');
+            dotsContainer.innerHTML = '';
+
+            latest10Movies.forEach((_, idx) => {
+                const dot = document.createElement('button');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-rose-600 w-6' : 'bg-zinc-600'}`;
+                dot.onclick = () => setHeroSlide(idx);
+                dotsContainer.appendChild(dot);
+            });
+
+            currentSlideIndex = 0;
+            if (latest10Movies.length > 0) {
+                updateHeroSlideUI();
+            }
+        }
+
+        function updateHeroSlideUI() {
+            if (latest10Movies.length === 0) return;
+            const movie = latest10Movies[currentSlideIndex];
+            
+            const poster = currentLang === 'en' ? (movie.posterEn || movie.poster) : (movie.posterKu || movie.poster);
+            document.getElementById('hero-slider-bg').src = poster;
+            
+            if (currentLang === 'en') {
+                document.getElementById('hero-slider-title').innerText = movie.title;
+            } else {
+                document.getElementById('hero-slider-title').innerText = `${movie.titleKurdish} (${movie.title})`;
+            }
+
+            document.getElementById('hero-slider-counter').innerText = `${currentSlideIndex + 1} / ${latest10Movies.length}`;
+            
+            const btn = document.getElementById('hero-slider-btn');
+            btn.onclick = () => openMovieDetails(movie.id);
+
+            const dots = document.getElementById('hero-slider-dots').children;
+            Array.from(dots).forEach((dot, idx) => {
+                if (idx === currentSlideIndex) {
+                    dot.className = 'w-6 h-2 rounded-full bg-rose-600 transition-all duration-300';
+                } else {
+                    dot.className = 'w-2 h-2 rounded-full bg-zinc-600 transition-all duration-300';
+                }
+            });
+        }
+
+        function nextHeroSlide() {
+            if (latest10Movies.length === 0) return;
+            currentSlideIndex = (currentSlideIndex + 1) % latest10Movies.length;
+            updateHeroSlideUI();
+        }
+
+        function prevHeroSlide() {
+            if (latest10Movies.length === 0) return;
+            currentSlideIndex = (currentSlideIndex - 1 + latest10Movies.length) % latest10Movies.length;
+            updateHeroSlideUI();
+        }
+
+        function setHeroSlide(index) {
+            currentSlideIndex = index;
+            updateHeroSlideUI();
+        }
+
+        function navigateTo(pageId) {
+            ['page-home', 'page-profile', 'page-login', 'page-register', 'page-details', 'page-watch'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (pageId === 'profile') {
+                renderProfileData();
+            }
+        }
+
+        function handleAccountNavClick() {
+            if (currentUser) {
+                navigateTo('profile');
+            } else {
+                navigateTo('login');
+            }
+        }
+
+        function handleAccountLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            const foundAcc = userAccounts.find(a => a.email === email && a.pass === pass);
+            if (foundAcc) {
+                currentUser = foundAcc.name;
+                saveData();
+                document.getElementById('nav-user-text').innerText = currentUser;
+                navigateTo('profile');
+            } else {
+                alert('ئیمەیل یان وشەی نهێنی هەڵەیە!');
+            }
+        }
+
+        function handleAccountRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+
+            if (userAccounts.some(a => a.email === email)) {
+                alert('ئەم ئیمەیڵە پێشتر تۆمارکراوە!');
+                return;
+            }
+
+            const newAccount = { name, email, pass, role: 'member' };
+            userAccounts.push(newAccount);
+            currentUser = name;
+            saveData();
+
+            document.getElementById('nav-user-text').innerText = currentUser;
+            navigateTo('profile');
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            saveData();
+            document.getElementById('nav-user-text').innerText = currentLang === 'en' ? 'Profile / In' : 'پڕۆفایل / ئین';
+            navigateTo('home');
+        }
+
+        function toggleFavoriteMovie() {
+            if (!currentActiveMovie) return;
+            const idx = userFavorites.indexOf(currentActiveMovie.id);
+            if (idx > -1) {
+                userFavorites.splice(idx, 1);
+            } else {
+                userFavorites.push(currentActiveMovie.id);
+            }
+            saveData();
+            updateFavButtonUI();
+        }
+
+        function updateFavButtonUI() {
+            if (!currentActiveMovie) return;
+            const favBtn = document.getElementById('fav-btn');
+            const favIcon = document.getElementById('fav-icon');
+            if (userFavorites.includes(currentActiveMovie.id)) {
+                favBtn.className = "bg-rose-600 hover:bg-rose-700 text-white p-3 rounded-xl border border-rose-600 transition";
+                favIcon.setAttribute('fill', 'white');
+            } else {
+                favBtn.className = "bg-zinc-800 hover:bg-zinc-700 text-white p-3 rounded-xl border border-zinc-700 transition";
+                favIcon.removeAttribute('fill');
+            }
+            lucide.createIcons();
+        }
+
+        function renderFilteredMovies() {
+            const grid = document.getElementById('home-movies-grid');
+            grid.innerHTML = '';
+
+            let filtered = movies.filter(m => {
+                const matchCat = activeFilters.cat === 'all' || m.category === activeFilters.cat;
+                const matchGenre = activeFilters.genre === 'all' || m.genre === activeFilters.genre;
+                return matchCat && matchGenre;
+            });
+
+            if (activeFilters.sort === 'newest') {
+                filtered.sort((a, b) => b.uploadDate - a.uploadDate);
+            } else if (activeFilters.sort === 'views') {
+                filtered.sort((a, b) => b.views - a.views);
+            } else if (activeFilters.sort === 'rating') {
+                filtered.sort((a, b) => parseFloat(b.imdb || 0) - parseFloat(a.imdb || 0));
+            } else {
+                filtered.sort((a, b) => b.views - a.views);
+            }
+
+            const countTitle = document.getElementById('results-count-title');
+            countTitle.innerText = `${currentLang === 'en' ? 'Filtered Movies' : 'فیلمە هەڵبژێردراوەکان'} (${filtered.length})`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-xs">${currentLang === 'en' ? 'No movies found' : 'هیچ فیلمێک نەدۆزرایەوە'}</div>`;
+                return;
+            }
+
+            filtered.forEach(m => {
+                const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                grid.innerHTML += `
+                    <div onclick="openMovieDetails('${m.id}')" class="bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-lg cursor-pointer group transition hover:border-rose-600/60">
+                        <div class="relative aspect-[3/4] overflow-hidden">
+                            <img src="${poster}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                            <div class="absolute top-2 left-2 bg-amber-500 text-black font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-md">
+                                ⭐ ${m.imdb}
+                            </div>
+                            <div class="absolute bottom-2 right-2 bg-black/70 backdrop-blur-md text-zinc-300 font-bold text-[10px] px-2 py-0.5 rounded-md">
+                                👀 ${formatViews(m.views)}
+                            </div>
+                        </div>
+                        <div class="p-3 space-y-1 text-right">
+                            <h4 class="text-white font-bold text-xs truncate">${titleText}</h4>
+                            <span class="text-zinc-400 text-[10px] block">${m.duration || ''}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openMovieDetails(movieId, skipHistory = false) {
+            const movie = movies.find(m => m.id === movieId);
+            if (!movie) return;
+            currentActiveMovie = movie;
+
+            if (!skipHistory) {
+                movie.views = (movie.views || 0) + 1;
+                if (!userHistory.includes(movie.id)) {
+                    userHistory.unshift(movie.id);
+                } else {
+                    userHistory = [movie.id, ...userHistory.filter(id => id !== movie.id)];
+                }
+                saveData();
+            }
+
+            const poster = currentLang === 'en' ? (movie.posterEn || movie.poster) : (movie.posterKu || movie.poster);
+            document.getElementById('detail-poster').src = poster;
+            
+            if (currentLang === 'en') {
+                document.getElementById('detail-title').innerText = movie.title;
+                document.getElementById('detail-story').innerText = movie.storyEn || movie.story;
+            } else {
+                document.getElementById('detail-title').innerText = `${movie.titleKurdish} (${movie.title})`;
+                document.getElementById('detail-story').innerText = movie.story || movie.storyEn;
+            }
+
+            document.getElementById('detail-views').innerText = `👀 ${formatViews(movie.views)}`;
+            document.getElementById('detail-duration').innerText = `⏳ ${movie.duration || '120 خولەک'}`;
+            document.getElementById('detail-imdb').innerText = `⭐ IMDb ${movie.imdb}`;
+
+            const trailerBg = document.getElementById('detail-trailer-bg');
+            const trailerIframe = document.getElementById('trailer-iframe');
+            const trailerVideo = document.getElementById('trailer-video');
+            
+            trailerBg.src = poster;
+            if (movie.trailerUrl) {
+                trailerBg.classList.add('hidden');
+                if (movie.trailerUrl.includes('data:video') || movie.trailerUrl.endsWith('.mp4')) {
+                    trailerVideo.src = movie.trailerUrl;
+                    trailerVideo.classList.remove('hidden');
+                    trailerIframe.classList.add('hidden');
+                } else {
+                    trailerIframe.src = movie.trailerUrl;
+                    trailerIframe.classList.remove('hidden');
+                    trailerVideo.classList.add('hidden');
+                }
+            } else {
+                trailerBg.classList.remove('hidden');
+                trailerIframe.classList.add('hidden');
+                trailerVideo.classList.add('hidden');
+            }
+
+            updateFavButtonUI();
+            renderSimilarMovies(movie.id, 'similar-movies-grid');
+            navigateTo('details');
+        }
+
+        function renderSimilarMovies(currentId, containerId) {
+            const grid = document.getElementById(containerId);
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const current = movies.find(m => m.id === currentId);
+            let similar = movies.filter(m => m.id !== currentId && (m.category === current?.category || m.genre === current?.genre));
+            if (similar.length === 0) similar = movies.filter(m => m.id !== currentId);
+
+            similar.slice(0, 4).forEach(m => {
+                const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                grid.innerHTML += `
+                    <div onclick="openMovieDetails('${m.id}')" class="bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-lg cursor-pointer group transition hover:border-rose-600/60">
+                        <div class="relative aspect-[3/4] overflow-hidden">
+                            <img src="${poster}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                            <div class="absolute top-2 left-2 bg-amber-500 text-black font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-md">
+                                ⭐ ${m.imdb}
+                            </div>
+                        </div>
+                        <div class="p-2.5 space-y-1 text-right">
+                            <h4 class="text-white font-bold text-xs truncate">${titleText}</h4>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openPlayerPage() {
+            if (!currentActiveMovie) return;
+            
+            const poster = currentLang === 'en' ? (currentActiveMovie.posterEn || currentActiveMovie.poster) : (currentActiveMovie.posterKu || currentActiveMovie.poster);
+            document.getElementById('watch-hero-bg').src = poster;
+            document.getElementById('watch-player-poster').src = poster;
+            
+            if (currentLang === 'en') {
+                document.getElementById('watch-movie-title').innerText = currentActiveMovie.title;
+                document.getElementById('watch-movie-story').innerText = currentActiveMovie.storyEn || currentActiveMovie.story;
+            } else {
+                document.getElementById('watch-movie-title').innerText = `${currentActiveMovie.titleKurdish} (${currentActiveMovie.title})`;
+                document.getElementById('watch-movie-story').innerText = currentActiveMovie.story || currentActiveMovie.storyEn;
+            }
+
+            // Setup Servers Select options based on movie servers
+            const serverSelect = document.getElementById('server-select');
+            serverSelect.innerHTML = '';
+            
+            const servers = currentActiveMovie.servers || { s1: currentActiveMovie.movieUrl || '' };
+            let hasServers = false;
+
+            if (servers.s1) {
+                serverSelect.innerHTML += `<option value="s1">Streamwish / Server 1</option>`;
+                hasServers = true;
+            }
+            if (servers.s2) {
+                serverSelect.innerHTML += `<option value="s2">Vidhide / Server 2</option>`;
+                hasServers = true;
+            }
+            if (servers.s3) {
+                serverSelect.innerHTML += `<option value="s3">Doodstream / Server 3</option>`;
+                hasServers = true;
+            }
+
+            if (!hasServers) {
+                serverSelect.innerHTML += `<option value="">هیچ سێرڤەرێک بەردەست نییە</option>`;
+            }
+
+            document.getElementById('watch-video-iframe').classList.add('hidden');
+            document.getElementById('watch-video-player').classList.add('hidden');
+            document.getElementById('watch-player-poster').classList.remove('hidden');
+            document.getElementById('watch-play-btn').classList.remove('hidden');
+
+            renderComments(currentActiveMovie.id);
+            renderSimilarMovies(currentActiveMovie.id, 'watch-similar-movies-grid');
+            renderMostViewedMovies('week');
+            navigateTo('watch');
+        }
+
+        function changeServer(serverKey) {
+            if (!currentActiveMovie) return;
+            const servers = currentActiveMovie.servers || {};
+            const link = servers[serverKey];
+            if (!link) return;
+
+            const iframe = document.getElementById('watch-video-iframe');
+            const video = document.getElementById('watch-video-player');
+            const poster = document.getElementById('watch-player-poster');
+            const playBtn = document.getElementById('watch-play-btn');
+
+            poster.classList.add('hidden');
+            playBtn.classList.add('hidden');
+
+            if (link.includes('data:video') || link.endsWith('.mp4')) {
+                video.src = link;
+                video.classList.remove('hidden');
+                iframe.classList.add('hidden');
+                video.play();
+            } else {
+                iframe.src = link;
+                iframe.classList.remove('hidden');
+                video.classList.add('hidden');
+            }
+        }
+
+        function startMovieStream() {
+            if (!currentActiveMovie) return;
+            const servers = currentActiveMovie.servers || {};
+            const activeServerKey = document.getElementById('server-select').value || 's1';
+            const link = servers[activeServerKey] || servers.s1 || currentActiveMovie.movieUrl;
+            
+            if (!link) {
+                alert('لینک یان پەڕگەی ئەم فیلمە بەردەست نییە!');
+                return;
+            }
+            changeServer(activeServerKey);
+        }
+
+        function renderComments(movieId) {
+            const list = document.getElementById('comments-list');
+            const countEl = document.getElementById('comments-count');
+            list.innerHTML = '';
+
+            const listData = movieComments[movieId] || [];
+            countEl.innerText = `(${listData.length}) کۆمێنت`;
+
+            if (listData.length === 0) {
+                list.innerHTML = `<p class="text-zinc-500 text-xs text-center py-2">هیچ کۆمێنتێک نییە. یەکەم کەس بن کۆمێنت بنوسن!</p>`;
+                return;
+            }
+
+            listData.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-zinc-900/80 p-3.5 rounded-xl border border-zinc-800/80 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-bold text-xs">${c.user}</span>
+                            <span class="text-[10px] text-zinc-500">${c.date}</span>
+                        </div>
+                        <p class="text-zinc-300 text-xs">${c.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function checkAuthForComment() {
+            if (!currentUser) {
+                navigateTo('login');
+            }
+        }
+
+        function submitComment() {
+            if (!currentUser) {
+                navigateTo('login');
+                return;
+            }
+            const txt = document.getElementById('comment-input-text').value.trim();
+            if (!txt || !currentActiveMovie) return;
+
+            if (!movieComments[currentActiveMovie.id]) {
+                movieComments[currentActiveMovie.id] = [];
+            }
+
+            movieComments[currentActiveMovie.id].unshift({
+                user: currentUser,
+                text: txt,
+                date: 'ئێستا'
+            });
+
+            userCommentsList.unshift({
+                movieTitle: currentActiveMovie.title,
+                text: txt,
+                date: 'ئێستا'
+            });
+
+            saveData();
+            document.getElementById('comment-input-text').value = '';
+            renderComments(currentActiveMovie.id);
+            alert('کۆمێنتەکەت بەسەرکەوتوویی نێردرا!');
+        }
+
+        function renderMostViewedMovies(period) {
+            const grid = document.getElementById('most-viewed-movies-grid');
+            grid.innerHTML = '';
+
+            let sorted = [...movies].sort((a, b) => b.views - a.views);
+            sorted.slice(0, 4).forEach(m => {
+                const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                grid.innerHTML += `
+                    <div onclick="openMovieDetails('${m.id}')" class="bg-zinc-900 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-lg cursor-pointer group transition hover:border-rose-600/60">
+                        <div class="relative aspect-[3/4] overflow-hidden">
+                            <img src="${poster}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                            <div class="absolute top-2 left-2 bg-amber-500 text-black font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-md">
+                                ⭐ ${m.imdb}
+                            </div>
+                        </div>
+                        <div class="p-2.5 space-y-1 text-right">
+                            <h4 class="text-white font-bold text-xs truncate">${titleText}</h4>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function switchMostViewedTab(period, btn) {
+            document.querySelectorAll('.most-viewed-tab-btn').forEach(b => {
+                b.className = "most-viewed-tab-btn bg-transparent text-zinc-400 hover:text-white font-bold text-xs py-2 px-5 rounded-full transition-all duration-300";
+            });
+            btn.className = "most-viewed-tab-btn bg-rose-600 text-white font-bold text-xs py-2 px-5 rounded-full transition-all duration-300";
+            renderMostViewedMovies(period);
+        }
+
+        function renderAds() {
+            const internalBox = document.getElementById('internal-ad-container');
+            if (internalAds.length > 0) {
+                internalBox.classList.remove('hidden');
+                internalBox.innerHTML = `
+                    <div class="bg-gradient-to-r from-rose-900/40 to-amber-900/40 border border-rose-600/40 p-4 rounded-2xl flex items-center justify-between">
+                        <span class="text-white font-bold text-xs">${internalAds[0].text}</span>
+                        <button class="bg-rose-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow">${internalAds[0].btn}</button>
+                    </div>
+                `;
+            }
+
+            const companyBox = document.getElementById('company-ads-container');
+            if (companyAds.length > 0) {
+                companyBox.classList.remove('hidden');
+                companyBox.innerHTML = '';
+                companyAds.forEach(ad => {
+                    companyBox.innerHTML += `
+                        <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex items-center justify-between">
+                            <div class="space-y-1">
+                                <span class="text-amber-500 font-black text-xs">${ad.brand}</span>
+                                <h4 class="text-white font-bold text-xs">${ad.title}</h4>
+                            </div>
+                            <button class="bg-amber-500 text-black font-bold text-xs px-4 py-2 rounded-xl shadow">وەرگرتن</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function toggleSearchModal() {
+            document.getElementById('search-modal').classList.toggle('hidden');
+        }
+
+        function handleLiveSearch() {
+            const query = document.getElementById('smart-search-input').value.trim().toLowerCase();
+            const resultsBox = document.getElementById('search-results');
+            resultsBox.innerHTML = '';
+            if (!query) return;
+
+            const matches = movies.filter(m => m.title.toLowerCase().includes(query) || (m.titleKurdish && m.titleKurdish.includes(query)));
+            matches.forEach(m => {
+                const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                resultsBox.innerHTML += `
+                    <div onclick="toggleSearchModal(); openMovieDetails('${m.id}')" class="flex items-center gap-3 bg-zinc-900 border border-zinc-800 p-2.5 rounded-xl cursor-pointer hover:border-rose-600">
+                        <img src="${poster}" class="w-12 h-16 object-cover rounded-lg">
+                        <div>
+                            <h4 class="text-white font-bold text-xs">${titleText}</h4>
+                            <span class="text-zinc-400 text-[10px]">⭐ ${m.imdb} | 👀 ${formatViews(m.views)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleFilterModal() {
+            document.getElementById('filter-modal').classList.toggle('hidden');
+        }
+
+        function selectFilter(type, value, btn) {
+            const group = document.querySelectorAll(`.filter-${type}-btn`);
+            group.forEach(b => b.classList.remove('filter-btn-active'));
+            btn.classList.add('filter-btn-active');
+            activeFilters[type] = value;
+        }
+
+        function applyFilters() {
+            toggleFilterModal();
+            renderFilteredMovies();
+        }
+
+        function resetFilters() {
+            activeFilters = { cat: 'all', genre: 'all', sort: 'featured' };
+            document.querySelectorAll('.filter-cat-btn, .filter-genre-btn, .filter-sort-btn').forEach(b => b.classList.remove('filter-btn-active'));
+            document.querySelector('.filter-cat-btn').classList.add('filter-btn-active');
+            document.querySelector('.filter-genre-btn').classList.add('filter-btn-active');
+            document.querySelector('.filter-sort-btn').classList.add('filter-btn-active');
+            toggleFilterModal();
+            renderFilteredMovies();
+        }
+
+        function toggleForgotPasswordModal() {
+            document.getElementById('forgot-password-modal').classList.toggle('hidden');
+        }
+
+        function handleForgotPasswordSubmit(e) {
+            e.preventDefault();
+            const msg = document.getElementById('forgot-status-msg');
+            msg.innerText = "لینکی ڕێکخستنەوەی وشەی نهێنی نێردرا بۆ ئیمەیڵەکەت!";
+            msg.className = "text-xs text-center font-medium text-emerald-500 block";
+            setTimeout(() => {
+                toggleForgotPasswordModal();
+                msg.classList.add('hidden');
+            }, 2500);
+        }
+
+        function shareWebsite() {
+            if (navigator.share) {
+                navigator.share({ title: 'Filmflix', url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('لینکی وێبسایتەکە کۆپی کرا!');
+            }
+        }
+
+        function changeProfileImage(event, imgId) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById(imgId).src = e.target.result;
+                if (imgId === 'profile-avatar-img') profileAvatarSrc = e.target.result;
+                if (imgId === 'profile-cover-img') profileCoverSrc = e.target.result;
+                saveData();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function switchProfileTab(tab) {
+            const titleEl = document.getElementById('profile-tab-title');
+            const contentEl = document.getElementById('profile-tab-content');
+            contentEl.innerHTML = '';
+
+            if (tab === 'comments') {
+                titleEl.innerText = currentLang === 'en' ? 'Your Comments' : 'کۆمێنتەکانت';
+                if (userCommentsList.length === 0) {
+                    contentEl.innerHTML = `<p class="col-span-full text-zinc-500 text-xs text-center">هیچ کۆمێنتێک نییە</p>`;
+                    return;
+                }
+                userCommentsList.forEach(c => {
+                    contentEl.innerHTML += `
+                        <div class="col-span-2 bg-zinc-900 border border-zinc-800 p-3 rounded-xl space-y-1 text-right">
+                            <span class="text-rose-500 font-bold text-xs">${c.movieTitle}</span>
+                            <p class="text-white text-xs">${c.text}</p>
+                            <span class="text-[10px] text-zinc-500 block">${c.date}</span>
+                        </div>
+                    `;
+                });
+            } else if (tab === 'favorites') {
+                titleEl.innerText = currentLang === 'en' ? 'Favorite Movies' : 'فیلمە دڵخوازەکان';
+                const favMovies = movies.filter(m => userFavorites.includes(m.id));
+                if (favMovies.length === 0) {
+                    contentEl.innerHTML = `<p class="col-span-full text-zinc-500 text-xs text-center">هیچ فیلمێکی دڵخواز نییە</p>`;
+                    return;
+                }
+                favMovies.forEach(m => {
+                    const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                    const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                    contentEl.innerHTML += `
+                        <div onclick="openMovieDetails('${m.id}')" class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer">
+                            <img src="${poster}" class="w-full aspect-[3/4] object-cover">
+                            <div class="p-2">
+                                <h4 class="text-white font-bold text-xs truncate">${titleText}</h4>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else if (tab === 'history') {
+                titleEl.innerText = currentLang === 'en' ? 'Watch History' : 'هیستۆری سەیرکردن';
+                const histMovies = movies.filter(m => userHistory.includes(m.id));
+                if (histMovies.length === 0) {
+                    contentEl.innerHTML = `<p class="col-span-full text-zinc-500 text-xs text-center">هیچ هیستۆرییەک نییە</p>`;
+                    return;
+                }
+                histMovies.forEach(m => {
+                    const poster = currentLang === 'en' ? (m.posterEn || m.poster) : (m.posterKu || m.poster);
+                    const titleText = currentLang === 'en' ? m.title : `${m.titleKurdish} (${m.title})`;
+                    contentEl.innerHTML += `
+                        <div onclick="openMovieDetails('${m.id}')" class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer">
+                            <img src="${poster}" class="w-full aspect-[3/4] object-cover">
+                            <div class="p-2">
+                                <h4 class="text-white font-bold text-xs truncate">${titleText}</h4>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function renderProfileData() {
+            document.getElementById('profile-comments-count').innerText = userCommentsList.length;
+            document.getElementById('profile-favorites-count').innerText = userFavorites.length;
+            document.getElementById('profile-history-count').innerText = userHistory.length;
+            switchProfileTab('favorites');
+        }
+    </script>
+</body>
+</html>
