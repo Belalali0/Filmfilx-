@@ -198,24 +198,28 @@
                             </div>
                             <button type="button" onclick="addAdminSeason()" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition">+ زیادکردنی بەش / سیزن</button>
                         </div>
+                        <p class="text-zinc-500 text-[10px]">بۆ هەر ئەڵقەیەک دەتوانیت هەرچەند لینکی سێرڤەرت پێویستە زیادی بکەیت (ئەگەر یەکێکیان کارنەکرد ئەوی تر کاردەکات)</p>
                         <div id="admin-seasons-builder-container" class="space-y-3 pt-2"></div>
                     </div>
 
                     <!-- MOVIE SERVERS LINKS -->
                     <div class="space-y-3 bg-zinc-800/50 p-3 rounded-xl border border-zinc-700">
-                        <label class="text-zinc-200 text-xs font-bold block">لینکەکانی سێرڤەری فیلم (Embed URLs)</label>
-                        <div class="space-y-1">
-                            <label class="text-zinc-400 text-[11px]">سێرڤەری ١ (Streamwish)</label>
-                            <input id="up-server1" type="url" placeholder="لینکی سێرڤەری ١..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        <div class="flex items-center justify-between">
+                            <label class="text-zinc-200 text-xs font-bold block">لینکەکانی سێرڤەری فیلم (Embed URLs)</label>
+                            <button type="button" onclick="addUploadServerInput()" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition">+ زیادکردنی سێرڤەر</button>
                         </div>
-                        <div class="space-y-1">
-                            <label class="text-zinc-400 text-[11px]">سێرڤەری ٢ (Vidhide)</label>
-                            <input id="up-server2" type="url" placeholder="لینکی سێرڤەری ٢..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                        <p class="text-zinc-500 text-[10px]">دەتوانیت هەرچەند سێرڤەرێکت پێویستە زیادی بکەیت، ئەگەر یەکێکیان کارنەکرد ئەوی تر کاردەکات</p>
+                        <div id="up-servers-container" class="space-y-2"></div>
+                    </div>
+
+                    <!-- SUBTITLES (SRT / VTT) -->
+                    <div class="space-y-3 bg-zinc-800/50 p-3 rounded-xl border border-zinc-700">
+                        <div class="flex items-center justify-between">
+                            <label class="text-zinc-200 text-xs font-bold block">فایلی ژێرنووس (SRT / VTT)</label>
+                            <button type="button" onclick="addUploadSubtitleInput()" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition">+ زیادکردنی ژێرنووس</button>
                         </div>
-                        <div class="space-y-1">
-                            <label class="text-zinc-400 text-[11px]">سێرڤەری ٣ (Doodstream)</label>
-                            <input id="up-server3" type="url" placeholder="لینکی سێرڤەری ٣..." class="w-full bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
-                        </div>
+                        <p class="text-zinc-500 text-[10px]">دەتوانیت چەند فایلی ژێرنووسێکت پێویستە زیادی بکەیت، بۆ هەر یەکێک ناوێک بنووسە (وەک: کوردی، English) تا بینەر بەپێی ویستی خۆی هەڵیبژێرێت. ئەم بەشە بۆ فیلمی تاکە بەشە، ئەگەر فیلمەکە زنجیرەیە ژێرنووس بۆ هەر ئەڵقەیەک لە خوارەوە لەگەڵ بەشەکان زیادی بکە.</p>
+                        <div id="up-subtitles-container" class="space-y-2"></div>
                     </div>
 
                     <div class="grid grid-cols-1 gap-3">
@@ -739,9 +743,21 @@
                 </div>
                 <div class="relative max-w-full">
                     <select id="server-select" onchange="changeServer(this.value)" class="w-full bg-[#16161d] border border-zinc-800 text-zinc-200 py-3.5 px-4 rounded-2xl text-center text-sm font-semibold appearance-none focus:outline-none focus:border-rose-600">
-                        <option value="s1">Streamwish -1</option>
-                        <option value="s2">Vidhide Fast -2</option>
-                        <option value="s3">Doodstream -3</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-400">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-right">
+                <div class="flex items-center justify-end gap-2 text-amber-500 font-bold text-xs">
+                    <span>ژێرنووس (Subtitle)</span>
+                    <i data-lucide="captions" class="w-4 h-4"></i>
+                </div>
+                <div class="relative max-w-full">
+                    <select id="subtitle-select" onchange="changeSubtitle(this.value)" class="w-full bg-[#16161d] border border-zinc-800 text-zinc-200 py-3.5 px-4 rounded-2xl text-center text-sm font-semibold appearance-none focus:outline-none focus:border-rose-600">
+                        <option value="-1">بێ ژێرنووس</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-400">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -1131,15 +1147,15 @@
                 posterEn: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1', 
-                servers: { s1: 'https://www.youtube.com/embed/dQw4w9WgXcQ', s2: '', s3: '' },
+                servers: ['https://www.youtube.com/embed/dQw4w9WgXcQ'],
                 storyEn: 'A mysterious and wild-eyed new cash truck security guard surprises his co-workers during a heist...',
                 story: 'کەسێکی پر نهێنی دەبێتە پاسەوانێک کە لە بارهەڵگردا کار دەکات. لەکاتی هەوڵێکی دزیکردندا بە لێهاتوویی بێ وێنەوە ڕووبەڕووی دزەکان دەبێتەوە کە سەرنجی هەمووان بۆ خۆی ڕادەکێشێت...',
                 seasons: [
                     {
                         name: 'بەشی ١',
                         episodes: [
-                            { title: 'بەشی ١', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-                            { title: 'بەشی ٢', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+                            { title: 'بەشی ١', urls: ['https://www.youtube.com/embed/dQw4w9WgXcQ'] },
+                            { title: 'بەشی ٢', urls: ['https://www.youtube.com/embed/dQw4w9WgXcQ'] }
                         ]
                     }
                 ]
@@ -1157,7 +1173,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: 'https://www.youtube.com/embed/TcMBFSGVi1c?autoplay=1', 
-                servers: { s1: 'https://www.youtube.com/embed/TcMBFSGVi1c', s2: '', s3: '' },
+                servers: ['https://www.youtube.com/embed/TcMBFSGVi1c'],
                 storyEn: 'After the devastating events of Avengers: Infinity War, the universe is in ruins...',
                 story: 'دوای وێرانکارییەکانی ثانۆس لە گەردووندا، تۆڵەسێنەکان کۆدەبنەوە بۆ گەڕاندنەوەی هاوسەنگی جیهان...' 
             },
@@ -1174,7 +1190,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: 'https://www.youtube.com/embed/zSWdZVtXT7E?autoplay=1', 
-                servers: { s1: 'https://www.youtube.com/embed/zSWdZVtXT7E', s2: '', s3: '' },
+                servers: ['https://www.youtube.com/embed/zSWdZVtXT7E'],
                 storyEn: 'When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper...',
                 story: 'گەشتێکی ئەستێرەیی مەترسیدار لە ڕێگەی بڕینی کات و بۆشایی ئاسمان بۆ دۆزینەوەی گۆی زەوییەکی نوێ...' 
             },
@@ -1191,7 +1207,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'A high-octane action thriller which outlines the emotional journey of a man...',
                 story: 'چیرۆکێکی پڕ ئاکشن لەسەر پیاوێک کە دەیەوێت دادپەروەری لە کۆمەڵگەدا بنێتەوە...' 
             },
@@ -1208,15 +1224,15 @@
                 posterEn: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'An unusual group of robbers attempt to carry out the most perfect robbery...',
                 story: 'پڕۆفیسۆر و تیمەکەی گەورەترین و زیرەکانەترین دزی مێژوو لە پەنکدا ئەنجام دەدەن...',
                 seasons: [
                     {
                         name: 'بەشی ١',
                         episodes: [
-                            { title: 'بەشی ١', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-                            { title: 'بەشی ٢', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+                            { title: 'بەشی ١', urls: ['https://www.youtube.com/embed/dQw4w9WgXcQ'] },
+                            { title: 'بەشی ٢', urls: ['https://www.youtube.com/embed/dQw4w9WgXcQ'] }
                         ]
                     }
                 ]
@@ -1234,7 +1250,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'During her family\'s move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods...',
                 story: 'کچێکی گەنج دەچێتە جیهanێکی ڕوحانی و سەرسوڕهێنەر بۆ ڕزگارکردنی دایک و باوکی...' 
             },
@@ -1251,7 +1267,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham...',
                 story: 'باتمان ڕووبەڕووی مەترسیدارترین و ئاڵۆزترین دوژمنی دەبێتەوە کە جوکەرە...' 
             },
@@ -1268,7 +1284,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'Greed and class discrimination threaten the newly formed symbiotic relationship...',
                 story: 'خێزانێکی هەژار بە فێڵ خۆیان دەخەنە ناو ماڵی خێزانێکی زۆر دەوڵەمەندەوە...' 
             },
@@ -1285,7 +1301,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'Paranormal investigators Ed and Lorraine Warren work to help a family terrorized by a dark presence...',
                 story: 'لێکۆڵەرە ڕۆحییەکان ڕووبەڕووی ماڵێکی جنۆکەدار و تاریک دەبنەوە...' 
             },
@@ -1302,7 +1318,7 @@
                 posterEn: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80', 
                 posterKu: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=600&q=80',
                 trailerUrl: '', 
-                servers: { s1: '', s2: '', s3: '' },
+                servers: [],
                 storyEn: 'April 6th, 1917. As an infantry battalion assembles to wage war deep in enemy territory...',
                 story: 'دوو سەربازی بەریتانی لە جەنگی یەکەمی جیهانی ئەرکێکی ئەستەم بۆ گەیاندنی پەیامێک ئەنجام دەدەن...' 
             }
@@ -1310,12 +1326,35 @@
 
         let movies = JSON.parse(localStorage.getItem('kc_movies_db')) || defaultMovies;
 
+        // Migration: keep old saved data working with the new flexible multi-server format
         movies.forEach(m => {
             if (!m.posterEn) m.posterEn = m.poster || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
             if (!m.posterKu) m.posterKu = m.poster || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
             if (!m.storyEn) m.storyEn = m.story || '';
             if (!m.storyKu) m.storyKu = m.story || '';
-            if (!m.servers) m.servers = { s1: m.movieUrl || '', s2: '', s3: '' };
+
+            // Old format was a fixed {s1,s2,s3} object - convert to a flexible array of links
+            if (!m.servers) {
+                m.servers = m.movieUrl ? [m.movieUrl] : [];
+            } else if (!Array.isArray(m.servers)) {
+                m.servers = Object.values(m.servers).filter(u => u && u.trim());
+            }
+
+            // Old episode format was a single {url} - convert to a flexible {urls:[]} array
+            // Also make sure every movie/episode has a subtitles array to attach SRT/VTT files to
+            if (!m.subtitles) m.subtitles = [];
+            if (m.seasons) {
+                m.seasons.forEach(season => {
+                    if (season.episodes) {
+                        season.episodes.forEach(ep => {
+                            if (!ep.urls) {
+                                ep.urls = ep.url ? [ep.url] : [];
+                            }
+                            if (!ep.subtitles) ep.subtitles = [];
+                        });
+                    }
+                });
+            }
         });
 
         const internalAds = [
@@ -1449,7 +1488,11 @@
                 } else {
                     switchAdminTab('upload');
                 }
-                renderAdminSeasonsBuilder();
+                if (!document.getElementById('editing-movie-id').value) {
+                    renderAdminSeasonsBuilder();
+                    renderUploadServersBuilder();
+                    renderUploadSubtitlesBuilder();
+                }
             }
         }
 
@@ -1597,18 +1640,177 @@
             container.appendChild(div);
         }
 
-        function addAdminEpisode(seasonId, epTitle = '', epUrl = '') {
+        function addAdminEpisode(seasonId, epTitle = '', epUrls = [], epSubtitles = []) {
             const group = document.querySelector(`.admin-season-group[data-id="${seasonId}"]`);
             if (!group) return;
             const epContainer = group.querySelector('.episodes-container');
             const div = document.createElement('div');
-            div.className = "admin-ep-row flex items-center gap-2";
+            div.className = "admin-ep-block bg-zinc-900/70 p-2 rounded-lg space-y-1.5";
             div.innerHTML = `
-                <input type="text" placeholder="ناوی ئەڵقە (مثلاً: ئەڵقەی ١)" value="${epTitle}" class="ep-title-input bg-zinc-800 border border-zinc-700 text-white px-2 py-1 rounded text-xs w-1/3 focus:outline-none">
-                <input type="url" placeholder="لینکی ئەڵقە (Embed URL)..." value="${epUrl}" class="ep-url-input bg-zinc-800 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1 focus:outline-none">
-                <button type="button" onclick="this.closest('.admin-ep-row').remove()" class="text-rose-500 hover:text-rose-400 text-xs">✕</button>
+                <div class="flex items-center gap-2">
+                    <input type="text" placeholder="ناوی ئەڵقە (مثلاً: ئەڵقەی ١)" value="${epTitle}" class="ep-title-input bg-zinc-800 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1 focus:outline-none">
+                    <button type="button" onclick="this.closest('.admin-ep-block').remove()" class="text-rose-500 hover:text-rose-400 text-xs shrink-0">✕ سڕینەوەی ئەڵقە</button>
+                </div>
+                <div class="ep-urls-container space-y-1 pr-2 border-r-2 border-amber-500/40"></div>
+                <button type="button" onclick="addAdminEpisodeUrl(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded transition">+ زیادکردنی لینکی سێرڤەر</button>
+                <div class="ep-subtitles-container space-y-2 pt-1.5 mt-1 border-t border-zinc-700/50"></div>
+                <button type="button" onclick="addAdminEpisodeSubtitle(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded transition">+ زیادکردنی ژێرنووس</button>
             `;
             epContainer.appendChild(div);
+
+            const urlsContainer = div.querySelector('.ep-urls-container');
+            if (epUrls && epUrls.length > 0) {
+                epUrls.forEach(u => addAdminEpisodeUrlTo(urlsContainer, u));
+            } else {
+                addAdminEpisodeUrlTo(urlsContainer, '');
+            }
+
+            const subsContainer = div.querySelector('.ep-subtitles-container');
+            if (epSubtitles && epSubtitles.length > 0) {
+                epSubtitles.forEach(s => subsContainer.insertAdjacentHTML('beforeend', buildSubtitleRowHTML(s)));
+            }
+        }
+
+        function addAdminEpisodeUrl(btn) {
+            const block = btn.closest('.admin-ep-block');
+            const urlsContainer = block.querySelector('.ep-urls-container');
+            addAdminEpisodeUrlTo(urlsContainer, '');
+        }
+
+        function addAdminEpisodeUrlTo(urlsContainer, value = '') {
+            const row = document.createElement('div');
+            row.className = "flex items-center gap-2 ep-url-row";
+            row.innerHTML = `
+                <input type="url" placeholder="لینکی سێرڤەر (Embed URL)..." value="${value}" class="ep-url-input bg-zinc-800 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1 focus:outline-none">
+                <button type="button" onclick="this.closest('.ep-url-row').remove()" class="text-rose-500 hover:text-rose-400 text-xs">✕</button>
+            `;
+            urlsContainer.appendChild(row);
+        }
+
+        // ---- Shared helpers for reading uploaded files as promises ----
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ---- Shared subtitle (SRT/VTT) row builder, used for movies AND episodes ----
+        function buildSubtitleRowHTML(sub) {
+            const name = sub && sub.name ? sub.name : '';
+            const format = sub && sub.format ? sub.format : '';
+            const content = sub && sub.content ? sub.content : '';
+            const label = format ? `فایلی هەڵگیراو: ${name || ''}.${format}` : '';
+            const safeContent = content.replace(/<\/textarea>/gi, '<\\/textarea>');
+            return `
+                <div class="subtitle-row bg-zinc-900/60 p-2 rounded-lg border border-zinc-700 space-y-1.5" data-existing-format="${format}">
+                    <div class="flex items-center gap-2">
+                        <input type="text" value="${name}" placeholder="ناوی ژێرنووس (کوردی، English...)" class="sub-name-input flex-1 bg-zinc-800 border border-zinc-700 text-white px-2 py-1 rounded text-xs focus:outline-none focus:border-rose-600">
+                        <button type="button" onclick="this.closest('.subtitle-row').remove()" class="text-rose-500 hover:text-rose-400 text-xs shrink-0">✕</button>
+                    </div>
+                    <input type="file" accept=".srt,.vtt" class="sub-file-input w-full text-[10px] text-zinc-400 bg-zinc-800 rounded p-1 border border-zinc-700">
+                    <div class="sub-existing-label text-zinc-500 text-[10px]">${label}</div>
+                    <textarea class="sub-existing-content hidden">${safeContent}</textarea>
+                </div>
+            `;
+        }
+
+        async function collectSubtitlesFromContainer(container) {
+            if (!container) return [];
+            const rows = container.querySelectorAll(':scope > .subtitle-row');
+            let subs = [];
+            for (const row of rows) {
+                const nameInput = row.querySelector('.sub-name-input');
+                const name = nameInput ? nameInput.value.trim() : '';
+                if (!name) continue;
+                const fileInput = row.querySelector('.sub-file-input');
+                const file = fileInput && fileInput.files[0];
+                if (file) {
+                    const content = await readFileAsText(file);
+                    const format = file.name.toLowerCase().endsWith('.vtt') ? 'vtt' : 'srt';
+                    subs.push({ id: 'sub_' + Date.now() + Math.random().toString(36).substr(2, 5), name, format, content });
+                } else {
+                    const existingContentEl = row.querySelector('.sub-existing-content');
+                    const existingContent = existingContentEl ? existingContentEl.value : '';
+                    const existingFormat = row.getAttribute('data-existing-format') || 'srt';
+                    if (existingContent) {
+                        subs.push({ id: 'sub_' + Date.now() + Math.random().toString(36).substr(2, 5), name, format: existingFormat, content: existingContent });
+                    }
+                }
+            }
+            return subs;
+        }
+
+        function addAdminEpisodeSubtitle(btn) {
+            const block = btn.closest('.admin-ep-block') || btn.closest('.edit-ep-block');
+            if (!block) return;
+            const container = block.querySelector('.ep-subtitles-container');
+            container.insertAdjacentHTML('beforeend', buildSubtitleRowHTML(null));
+        }
+
+        // ---- Movie-level (non-series) subtitles builder ----
+        function addUploadSubtitleInput(sub = null) {
+            const container = document.getElementById('up-subtitles-container');
+            container.insertAdjacentHTML('beforeend', buildSubtitleRowHTML(sub));
+        }
+
+        function renderUploadSubtitlesBuilder(subsArr = []) {
+            const container = document.getElementById('up-subtitles-container');
+            container.innerHTML = '';
+            if (subsArr && subsArr.length > 0) {
+                subsArr.forEach(s => container.insertAdjacentHTML('beforeend', buildSubtitleRowHTML(s)));
+            }
+        }
+
+        function addUploadServerInput(value = '') {
+            const container = document.getElementById('up-servers-container');
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-2 up-server-row";
+            div.innerHTML = `
+                <span class="server-row-label text-zinc-500 text-[10px] w-14 shrink-0">سێرڤەر</span>
+                <input type="url" value="${value}" placeholder="لینکی سێرڤەر..." class="up-server-url flex-1 bg-zinc-800 border border-zinc-700 text-white px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-rose-600">
+                <button type="button" onclick="this.closest('.up-server-row').remove(); renumberUploadServers()" class="text-rose-500 hover:text-rose-400 text-xs">✕</button>
+            `;
+            container.appendChild(div);
+            renumberUploadServers();
+        }
+
+        function renumberUploadServers() {
+            const rows = document.querySelectorAll('#up-servers-container .up-server-row');
+            rows.forEach((row, i) => {
+                row.querySelector('.server-row-label').innerText = `سێرڤەر ${i + 1}`;
+            });
+        }
+
+        function renderUploadServersBuilder(serversArr = []) {
+            const container = document.getElementById('up-servers-container');
+            container.innerHTML = '';
+            if (serversArr && serversArr.length > 0) {
+                serversArr.forEach(s => addUploadServerInput(s));
+            } else {
+                addUploadServerInput();
+            }
+        }
+
+        function getUploadServersFromBuilder() {
+            const inputs = document.querySelectorAll('#up-servers-container .up-server-url');
+            let servers = [];
+            inputs.forEach(inp => {
+                const v = inp.value.trim();
+                if (v) servers.push(v);
+            });
+            return servers;
         }
 
         function renderAdminSeasonsBuilder(seasonsData = []) {
@@ -1631,31 +1833,36 @@
                     container.appendChild(div);
                     if (season.episodes) {
                         season.episodes.forEach(ep => {
-                            addAdminEpisode(seasonId, ep.title, ep.url);
+                            addAdminEpisode(seasonId, ep.title, ep.urls && ep.urls.length ? ep.urls : (ep.url ? [ep.url] : []), ep.subtitles || []);
                         });
                     }
                 });
             }
         }
 
-        function getSeasonsFromBuilder() {
+        async function getSeasonsFromBuilder() {
             const groups = document.querySelectorAll('.admin-season-group');
             let seasons = [];
-            groups.forEach(group => {
+            for (const group of groups) {
                 const nameInput = group.querySelector('.season-name-input');
                 const name = nameInput ? nameInput.value.trim() : '';
-                if (!name) return;
+                if (!name) continue;
                 let episodes = [];
-                const epRows = group.querySelectorAll('.admin-ep-row');
-                epRows.forEach(row => {
-                    const tInput = row.querySelector('.ep-title-input');
-                    const uInput = row.querySelector('.ep-url-input');
-                    if (tInput && uInput) {
-                        episodes.push({ title: tInput.value.trim(), url: uInput.value.trim() });
-                    }
-                });
+                const epBlocks = group.querySelectorAll('.admin-ep-block');
+                for (const block of epBlocks) {
+                    const tInput = block.querySelector('.ep-title-input');
+                    const title = tInput ? tInput.value.trim() : '';
+                    if (!title) continue;
+                    let urls = [];
+                    block.querySelectorAll('.ep-url-input').forEach(uInput => {
+                        const v = uInput.value.trim();
+                        if (v) urls.push(v);
+                    });
+                    const subtitles = await collectSubtitlesFromContainer(block.querySelector('.ep-subtitles-container'));
+                    episodes.push({ title, urls, subtitles });
+                }
                 seasons.push({ name, episodes });
-            });
+            }
             return seasons;
         }
 
@@ -1705,12 +1912,11 @@
             document.getElementById('up-poster-url-en').value = m.posterEn || '';
             document.getElementById('up-poster-url-ku').value = m.posterKu || '';
             document.getElementById('up-trailer-url').value = m.trailerUrl || '';
-            document.getElementById('up-server1').value = m.servers?.s1 || '';
-            document.getElementById('up-server2').value = m.servers?.s2 || '';
-            document.getElementById('up-server3').value = m.servers?.s3 || '';
             document.getElementById('up-story-en').value = m.storyEn || '';
             document.getElementById('up-story-ku').value = m.story || '';
 
+            renderUploadServersBuilder(m.servers || []);
+            renderUploadSubtitlesBuilder(m.subtitles || []);
             renderAdminSeasonsBuilder(m.seasons || []);
             document.getElementById('admin-movie-search-results').innerHTML = '';
             document.getElementById('admin-movie-search-input').value = '';
@@ -1770,11 +1976,30 @@
                     let epHtml = '';
                     if (season.episodes) {
                         season.episodes.forEach((ep, eIdx) => {
+                            const epUrls = ep.urls && ep.urls.length ? ep.urls : (ep.url ? [ep.url] : ['']);
+                            let urlsHtml = '';
+                            epUrls.forEach(u => {
+                                urlsHtml += `
+                                    <div class="flex items-center gap-2 edit-ep-url-row">
+                                        <input type="url" value="${u}" class="edit-ep-url bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
+                                        <button type="button" onclick="this.closest('.edit-ep-url-row').remove()" class="text-rose-500 text-xs">✕</button>
+                                    </div>
+                                `;
+                            });
+                            let subsHtml = '';
+                            (ep.subtitles || []).forEach(s => {
+                                subsHtml += buildSubtitleRowHTML(s);
+                            });
                             epHtml += `
-                                <div class="edit-ep-row flex items-center gap-2 pt-1">
-                                    <input type="text" value="${ep.title}" class="edit-ep-title bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs w-1/3">
-                                    <input type="url" value="${ep.url}" class="edit-ep-url bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
-                                    <button type="button" onclick="this.closest('.edit-ep-row').remove()" class="text-rose-500 text-xs">✕</button>
+                                <div class="edit-ep-block bg-zinc-800/60 p-2 rounded-lg space-y-1.5 pt-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" value="${ep.title}" placeholder="ناوی ئەڵقە..." class="edit-ep-title bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
+                                        <button type="button" onclick="this.closest('.edit-ep-block').remove()" class="text-rose-500 text-xs shrink-0">✕ سڕینەوە</button>
+                                    </div>
+                                    <div class="edit-ep-urls-container space-y-1 pr-2 border-r-2 border-amber-500/40">${urlsHtml}</div>
+                                    <button type="button" onclick="addEditEpisodeUrl(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">+ لینکی سێرڤەر</button>
+                                    <div class="ep-subtitles-container space-y-2 pt-1.5 mt-1 border-t border-zinc-700/50">${subsHtml}</div>
+                                    <button type="button" onclick="addAdminEpisodeSubtitle(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">+ زیادکردنی ژێرنووس</button>
                                 </div>
                             `;
                         });
@@ -1814,16 +2039,34 @@
             const group = btn.closest('.edit-season-group');
             const epsContainer = group.querySelector('.edit-eps-container');
             const div = document.createElement('div');
-            div.className = "edit-ep-row flex items-center gap-2 pt-1";
+            div.className = "edit-ep-block bg-zinc-800/60 p-2 rounded-lg space-y-1.5 pt-1";
             div.innerHTML = `
-                <input type="text" placeholder="ناوی ئەڵقە..." class="edit-ep-title bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs w-1/3">
-                <input type="url" placeholder="لینکی ئەڵقە..." class="edit-ep-url bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
-                <button type="button" onclick="this.closest('.edit-ep-row').remove()" class="text-rose-500 text-xs">✕</button>
+                <div class="flex items-center gap-2">
+                    <input type="text" placeholder="ناوی ئەڵقە..." class="edit-ep-title bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
+                    <button type="button" onclick="this.closest('.edit-ep-block').remove()" class="text-rose-500 text-xs shrink-0">✕ سڕینەوە</button>
+                </div>
+                <div class="edit-ep-urls-container space-y-1 pr-2 border-r-2 border-amber-500/40"></div>
+                <button type="button" onclick="addEditEpisodeUrl(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">+ لینکی سێرڤەر</button>
+                <div class="ep-subtitles-container space-y-2 pt-1.5 mt-1 border-t border-zinc-700/50"></div>
+                <button type="button" onclick="addAdminEpisodeSubtitle(this)" class="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">+ زیادکردنی ژێرنووس</button>
             `;
             epsContainer.appendChild(div);
+            addEditEpisodeUrl(div.querySelector('button[onclick^="addEditEpisodeUrl"]'));
         }
 
-        function saveEditedSeasonMovie() {
+        function addEditEpisodeUrl(btn) {
+            const block = btn.closest('.edit-ep-block');
+            const urlsContainer = block.querySelector('.edit-ep-urls-container');
+            const row = document.createElement('div');
+            row.className = "flex items-center gap-2 edit-ep-url-row";
+            row.innerHTML = `
+                <input type="url" placeholder="لینکی سێرڤەر..." class="edit-ep-url bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs flex-1">
+                <button type="button" onclick="this.closest('.edit-ep-url-row').remove()" class="text-rose-500 text-xs">✕</button>
+            `;
+            urlsContainer.appendChild(row);
+        }
+
+        async function saveEditedSeasonMovie() {
             const mId = document.getElementById('edit-movie-id').value;
             const m = movies.find(x => x.id === mId);
             if (!m) return;
@@ -1832,17 +2075,24 @@
 
             let seasons = [];
             const groups = document.querySelectorAll('.edit-season-group');
-            groups.forEach(g => {
+            for (const g of groups) {
                 const name = g.querySelector('.edit-season-name').value.trim();
-                if (!name) return;
+                if (!name) continue;
                 let episodes = [];
-                g.querySelectorAll('.edit-ep-row').forEach(r => {
-                    const t = r.querySelector('.edit-ep-title').value.trim();
-                    const u = r.querySelector('.edit-ep-url').value.trim();
-                    if (t && u) episodes.push({ title: t, url: u });
-                });
+                const epBlocks = g.querySelectorAll('.edit-ep-block');
+                for (const block of epBlocks) {
+                    const t = block.querySelector('.edit-ep-title').value.trim();
+                    if (!t) continue;
+                    let urls = [];
+                    block.querySelectorAll('.edit-ep-url').forEach(uInput => {
+                        const v = uInput.value.trim();
+                        if (v) urls.push(v);
+                    });
+                    const subtitles = await collectSubtitlesFromContainer(block.querySelector('.ep-subtitles-container'));
+                    episodes.push({ title: t, urls, subtitles });
+                }
                 seasons.push({ name, episodes });
-            });
+            }
             m.seasons = seasons;
             saveData();
             toggleEditSeasonMovieModal();
@@ -1852,7 +2102,7 @@
             }
         }
 
-        function handleMovieUpload(event) {
+        async function handleMovieUpload(event) {
             event.preventDefault();
             const editingId = document.getElementById('editing-movie-id').value;
             const title = document.getElementById('up-title').value.trim();
@@ -1862,12 +2112,13 @@
             const imdb = document.getElementById('up-imdb').value.trim();
             const duration = document.getElementById('up-duration').value.trim();
             const trailerUrl = document.getElementById('up-trailer-url').value.trim();
-            const server1 = document.getElementById('up-server1').value.trim();
-            const server2 = document.getElementById('up-server2').value.trim();
-            const server3 = document.getElementById('up-server3').value.trim();
+            const servers = getUploadServersFromBuilder();
             const storyEn = document.getElementById('up-story-en').value.trim();
             const storyKu = document.getElementById('up-story-ku').value.trim();
-            const seasons = getSeasonsFromBuilder();
+
+            // These involve reading uploaded files (SRT/VTT), so we wait for them
+            const seasons = await getSeasonsFromBuilder();
+            const subtitles = await collectSubtitlesFromContainer(document.getElementById('up-subtitles-container'));
 
             let posterEnUrl = document.getElementById('up-poster-url-en').value.trim() || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80';
             let posterKuUrl = document.getElementById('up-poster-url-ku').value.trim() || posterEnUrl;
@@ -1875,83 +2126,63 @@
             const posterFileEn = document.getElementById('up-poster-file-en').files[0];
             const posterFileKu = document.getElementById('up-poster-file-ku').files[0];
 
-            const finalizeUpload = () => {
-                if (editingId) {
-                    const m = movies.find(x => x.id === editingId);
-                    if (m) {
-                        m.title = title;
-                        m.titleKurdish = titleKurdish;
-                        m.category = category;
-                        m.genre = genre;
-                        m.imdb = imdb;
-                        m.duration = duration;
-                        m.posterEn = posterEnUrl;
-                        m.posterKu = posterKuUrl;
-                        m.trailerUrl = trailerUrl;
-                        m.servers = { s1: server1, s2: server2, s3: server3 };
-                        m.storyEn = storyEn;
-                        m.story = storyKu;
-                        m.seasons = seasons;
-                    }
-                    alert("فیلمەکە بە سەرکەوتوویی نوێکرایەوە!");
-                } else {
-                    const newMovie = {
-                        id: 'm_' + Date.now(),
-                        title,
-                        titleKurdish,
-                        category,
-                        genre,
-                        imdb,
-                        views: 10,
-                        uploadDate: Date.now(),
-                        duration,
-                        posterEn: posterEnUrl,
-                        posterKu: posterKuUrl,
-                        trailerUrl,
-                        servers: { s1: server1, s2: server2, s3: server3 },
-                        storyEn,
-                        story: storyKu,
-                        seasons
-                    };
-                    movies.unshift(newMovie);
-                    alert("فیلمەکە بە سەرکەوتوویی ئاپلۆد کرا!");
-                }
+            if (posterFileEn) posterEnUrl = await readFileAsDataURL(posterFileEn);
+            if (posterFileKu) posterKuUrl = await readFileAsDataURL(posterFileKu);
 
-                saveData();
-                updateFilterCounts();
-                renderFilteredMovies();
-                initHeroSlider();
-                toggleAdminModal();
-                event.target.reset();
-                document.getElementById('editing-movie-id').value = '';
-                document.getElementById('upload-submit-btn').innerText = translations[currentLang]['upload_btn'] || "ئاپلۆدکردنی فیلم";
-            };
-
-            if (posterFileEn || posterFileKu) {
-                let loadedCount = 0;
-                const totalToLoad = (posterFileEn ? 1 : 0) + (posterFileKu ? 1 : 0);
-                
-                if (posterFileEn) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        posterEnUrl = e.target.result;
-                        loadedCount++;
-                        if (loadedCount === totalToLoad) finalizeUpload();
-                    };
-                    reader.readAsDataURL(posterFileEn);
+            if (editingId) {
+                const m = movies.find(x => x.id === editingId);
+                if (m) {
+                    m.title = title;
+                    m.titleKurdish = titleKurdish;
+                    m.category = category;
+                    m.genre = genre;
+                    m.imdb = imdb;
+                    m.duration = duration;
+                    m.posterEn = posterEnUrl;
+                    m.posterKu = posterKuUrl;
+                    m.trailerUrl = trailerUrl;
+                    m.servers = servers;
+                    m.storyEn = storyEn;
+                    m.story = storyKu;
+                    m.seasons = seasons;
+                    m.subtitles = subtitles;
                 }
-                if (posterFileKu) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        posterKuUrl = e.target.result;
-                        loadedCount++;
-                        if (loadedCount === totalToLoad) finalizeUpload();
-                    };
-                    reader.readAsDataURL(posterFileKu);
-                }
+                alert("فیلمەکە بە سەرکەوتوویی نوێکرایەوە!");
             } else {
-                finalizeUpload();
+                const newMovie = {
+                    id: 'm_' + Date.now(),
+                    title,
+                    titleKurdish,
+                    category,
+                    genre,
+                    imdb,
+                    views: 10,
+                    uploadDate: Date.now(),
+                    duration,
+                    posterEn: posterEnUrl,
+                    posterKu: posterKuUrl,
+                    trailerUrl,
+                    servers: servers,
+                    storyEn,
+                    story: storyKu,
+                    seasons,
+                    subtitles
+                };
+                movies.unshift(newMovie);
+                alert("فیلمەکە بە سەرکەوتوویی ئاپلۆد کرا!");
             }
+
+            saveData();
+            updateFilterCounts();
+            renderFilteredMovies();
+            initHeroSlider();
+            toggleAdminModal();
+            event.target.reset();
+            document.getElementById('editing-movie-id').value = '';
+            document.getElementById('upload-submit-btn').innerText = translations[currentLang]['upload_btn'] || "ئاپلۆدکردنی فیلم";
+            renderAdminSeasonsBuilder();
+            renderUploadServersBuilder();
+            renderUploadSubtitlesBuilder();
         }
 
         function initHeroSlider() {
@@ -2440,9 +2671,100 @@
                 sec.classList.add('hidden');
             }
 
+            renderServerSelect();
+            renderSubtitleSelect();
             renderWatchSimilar();
             renderWatchComments();
             resetPlayerState();
+        }
+
+        // ---- Subtitle playback (SRT/VTT) ----
+        function getCurrentSubtitlesList() {
+            if (!currentActiveMovie) return [];
+            if (currentActiveMovie.seasons && currentActiveMovie.seasons.length > 0) {
+                const s = currentActiveMovie.seasons[activeSeasonIndex];
+                const ep = s && s.episodes ? s.episodes[activeEpisodeIndex] : null;
+                return (ep && ep.subtitles) ? ep.subtitles : [];
+            }
+            return currentActiveMovie.subtitles || [];
+        }
+
+        function renderSubtitleSelect() {
+            const select = document.getElementById('subtitle-select');
+            if (!select || !currentActiveMovie) return;
+
+            const subsList = getCurrentSubtitlesList();
+            let html = `<option value="-1">بێ ژێرنووس</option>`;
+            subsList.forEach((sub, idx) => {
+                html += `<option value="${idx}">${sub.name}</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        function srtToVtt(srtContent) {
+            let vtt = srtContent.replace(/\r+/g, '');
+            vtt = vtt.replace(/^\d+\s*\n(?=\d{2}:\d{2}:\d{2})/gm, '');
+            vtt = vtt.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+            return 'WEBVTT\n\n' + vtt.trim() + '\n';
+        }
+
+        function applySubtitleTrack(idx) {
+            const video = document.getElementById('watch-video-player');
+            if (!video) return;
+            video.querySelectorAll('track').forEach(t => t.remove());
+
+            if (idx === null || idx === undefined || idx === '-1' || idx === -1) return;
+
+            const subsList = getCurrentSubtitlesList();
+            const sub = subsList[idx];
+            if (!sub || !sub.content) return;
+
+            const vttContent = sub.format === 'vtt' ? sub.content : srtToVtt(sub.content);
+            const blob = new Blob([vttContent], { type: 'text/vtt' });
+            const url = URL.createObjectURL(blob);
+
+            const track = document.createElement('track');
+            track.kind = 'subtitles';
+            track.label = sub.name;
+            track.srclang = 'ku';
+            track.src = url;
+            track.default = true;
+            video.appendChild(track);
+
+            setTimeout(() => {
+                if (video.textTracks && video.textTracks.length > 0) {
+                    video.textTracks[0].mode = 'showing';
+                }
+            }, 300);
+        }
+
+        function changeSubtitle(value) {
+            applySubtitleTrack(value);
+        }
+
+        function renderServerSelect() {
+            const select = document.getElementById('server-select');
+            if (!select || !currentActiveMovie) return;
+
+            let list = [];
+            if (currentActiveMovie.seasons && currentActiveMovie.seasons.length > 0) {
+                const s = currentActiveMovie.seasons[activeSeasonIndex];
+                const ep = s && s.episodes ? s.episodes[activeEpisodeIndex] : null;
+                list = (ep && ep.urls) ? ep.urls : [];
+            } else {
+                list = currentActiveMovie.servers || [];
+            }
+
+            if (list.length === 0) {
+                select.innerHTML = `<option value="">هیچ سێرڤەرێک بەردەست نییە</option>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach((url, idx) => {
+                html += `<option value="${idx}">سێرڤەر ${idx + 1}</option>`;
+            });
+            select.innerHTML = html;
         }
 
         function resetPlayerState() {
@@ -2451,21 +2773,24 @@
             document.getElementById('watch-video-iframe').src = '';
             document.getElementById('watch-video-player').classList.add('hidden');
             document.getElementById('watch-video-player').src = '';
+            document.getElementById('watch-video-player').querySelectorAll('track').forEach(t => t.remove());
             document.getElementById('watch-play-btn').classList.remove('hidden');
         }
 
         function startMovieStream() {
             if (!currentActiveMovie) return;
-            const serverKey = document.getElementById('server-select').value;
+            const serverIdx = document.getElementById('server-select').value;
             let url = '';
 
             if (currentActiveMovie.seasons && currentActiveMovie.seasons.length > 0) {
                 const s = currentActiveMovie.seasons[activeSeasonIndex];
                 if (s && s.episodes && s.episodes[activeEpisodeIndex]) {
-                    url = s.episodes[activeEpisodeIndex].url;
+                    const urls = s.episodes[activeEpisodeIndex].urls || [];
+                    url = urls[serverIdx] || '';
                 }
             } else {
-                url = currentActiveMovie.servers?.[serverKey] || currentActiveMovie.trailerUrl || '';
+                const servers = currentActiveMovie.servers || [];
+                url = servers[serverIdx] || currentActiveMovie.trailerUrl || '';
             }
 
             const poster = document.getElementById('watch-player-poster');
@@ -2487,6 +2812,8 @@
                     iframe.classList.add('hidden');
                     video.play().catch(() => {});
                 }
+                const subtitleSelect = document.getElementById('subtitle-select');
+                applySubtitleTrack(subtitleSelect ? subtitleSelect.value : '-1');
             } else {
                 alert("لینکی سێرڤەر بۆ ئەم بەشە بەردەست نییە.");
             }
@@ -2628,4 +2955,3 @@
     </script>
 </body>
 </html>
-
